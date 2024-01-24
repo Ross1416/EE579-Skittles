@@ -24,6 +24,7 @@ timeIncrement();
 Change History
 --------------------------------------------------------------------------------
 20-JAN-2024 SARK created general structure
+24-JAN-2024 SARK added DC motor / PWM functionality
 --------------------------------------------------------------------------------
 */
 
@@ -45,12 +46,35 @@ struct Time {
 struct flags {
 	char button;
 	char debounce;
+
 	char timerA0;
+
+	char motorA;
+	char motorB;
 };
 
 //Define Scheduler
 struct Scheduler {
 	struct Time debounce;
+	struct Time pwmMotorA;
+	struct Time pwmMotorB;
+};
+
+//Define variable with PWM info
+struct PWM {
+	int sec;
+	int ms;
+    int aSec;
+    int aMs;
+	char state;
+};
+
+//Define variable which contains motor information
+struct MotorDC {
+    char direction; //Off (0), Forward (1) or Back(2)
+    int pinA;
+    int pinB;
+    struct PWM pwm;
 };
 
 //==============================================================================
@@ -65,6 +89,8 @@ void    checkSchedule();
 void    setupPins();
 void    setupScheduleTimer();
 void    timeIncrement(struct Time *time, int sec, int ms);
+void 	motorOutput(struct MotorDC motor);
+void 	motorSetup(struct MotorDC motor);
 
 //==============================================================================
 // MACRO
@@ -77,7 +103,7 @@ void    timeIncrement(struct Time *time, int sec, int ms);
 #define CLOCK_USED     SMCK_FREQ
 #define LOW_POWER      LPM0
 #define SECOND_COUNT   1000
-#define TIMER_INC_MS   20
+#define TIMER_INC_MS   2
 
 //Frequency Tones
 #define LOW_FREQ    74
@@ -99,6 +125,8 @@ struct Time currentTime     =   {0, 0};    //Running count of time
 struct Scheduler Schedule   =   {0};       //Schedule when events needing attended
 struct flags flag           =   {0};       //Flag when something ready to be attended
 
+struct MotorDC motorA = {0, BIT6, 0x00, {0, 100, 0, 50, 1}};  //Motor information (On Port 1)
+struct MotorDC motorB = {0, BIT0, 0x00, {0, 100, 0, 50, 1}};
 //==============================================================================
 // Functions
 //------------------------------------------------------------------------------
@@ -139,11 +167,25 @@ int main(void)
 
     //Setup device
     setupPins();
+	motorSetup(motorA);
+	motorSetup(motorB);
     setupScheduleTimer();
 
-    //Other setup
+
+    //Start or disable schedules
     Schedule.debounce.sec = 0;
     Schedule.debounce.ms = -1;
+
+    //Start PWM of Motors
+    timeIncrement(&Schedule.pwmMotorA, motorA.pwm.aSec, motorA.pwm.aMs);
+    motorA.pwm.state = 1;
+    flag.motorA = 1;
+    motorA.direction = 1;
+
+    timeIncrement(&Schedule.pwmMotorB, motorB.pwm.aSec, motorB.pwm.aMs);
+    motorB.pwm.state = 1;
+    flag.motorB = 1;
+    motorB.direction = 1;
 
     __bis_SR_register(GIE);
 
@@ -154,23 +196,76 @@ int main(void)
             checkSchedule();	//Check if time to do anything
             flag.timerA0 = 0;
         }
-        else if(flag.debounce || flag.button)	//If something needs attended / or more flags as needed in condition
+        else if(flag.debounce || flag.button || flag.motorA || flag.motorB)	//If something needs attended / or more flags as needed in condition
         {
 			checkFlags();		//Deal with what needs attended
         }
         else
         {
-            LOW_POWER;
         }
     }
 }
 
 void checkSchedule()
 {
+    int incSec = 0;
+    int incMs = 0;
+
 	if(isTime(Schedule.debounce))  //Debounce button check
     {
         flag.debounce = 1;
     }
+
+	if(isTime(Schedule.pwmMotorA))  //Debounce button check
+    {
+		if(motorA.pwm.state)
+		{
+			incSec = motorA.pwm.sec-motorA.pwm.aSec;
+			incMs = motorA.pwm.ms-motorA.pwm.aMs;
+			timeIncrement(&(Schedule.pwmMotorA), incSec, incMs);
+			motorA.pwm.state = 0;
+			flag.motorA = 1;
+		}
+		else
+		{
+			timeIncrement(&Schedule.pwmMotorA, motorA.pwm.aSec, motorA.pwm.aMs);
+			motorA.pwm.state = 1;
+			if (motorA.pwm.aMs == 0) //If no on time to PWM
+			{
+			    flag.motorA = 0;
+			}
+			else
+			{
+			    flag.motorA = 1;
+			}
+		}
+    }
+
+	if(isTime(Schedule.pwmMotorB))  //Debounce button check
+    {
+		if(motorB.pwm.state)
+		{
+			incSec = motorB.pwm.sec-motorB.pwm.aSec;
+			incMs = motorB.pwm.ms-motorB.pwm.aMs;
+			timeIncrement(&(Schedule.pwmMotorB), incSec, incMs);
+			motorB.pwm.state = 0;
+			flag.motorB = 1;
+		}
+		else
+		{
+			timeIncrement(&Schedule.pwmMotorB, motorB.pwm.aSec, motorB.pwm.aMs);
+			motorB.pwm.state = 1;
+            if (motorA.pwm.aMs == 0) //If no on time to PWM
+            {
+                flag.motorB = 0;
+            }
+            else
+            {
+                flag.motorB = 1;
+            }
+		}
+    }
+
 }
 
 void checkFlags()
@@ -179,7 +274,16 @@ void checkFlags()
 	{
 		if((P1IN & 0x08) != 0x08)   //Button still pressed after debounce
 		{
+		    //Toggle LED
 			P2OUT ^= 0x2A;
+
+			//Decrease motor speed on each press
+			motorA.pwm.aMs += 10;
+			if (motorA.pwm.aMs > motorA.pwm.ms) {motorA.pwm.aMs = 0;}
+
+			//Decrease motor speed on each press
+			motorB.pwm.aMs += 10;
+			if (motorB.pwm.aMs > motorB.pwm.ms) {motorB.pwm.aMs = 0;}
 		}
 		Schedule.debounce.sec = 0;
 		Schedule.debounce.ms = -1;
@@ -194,6 +298,18 @@ void checkFlags()
         }
         flag.button = 0;
     }
+
+	if (flag.motorA)
+    {
+		motorOutput(motorA);
+		flag.motorA = 0;
+	}
+
+	if (flag.motorB)
+    {
+		motorOutput(motorB);
+		flag.motorB = 0;
+	}
 }
 
 void timeIncrement(struct Time *time, int sec, int ms)
@@ -219,9 +335,7 @@ void timeIncrement(struct Time *time, int sec, int ms)
 void setupPins()
 {
     //LEDs
-    P1DIR |= BIT6 + BIT0;  //Red & Driver's LED
     P2DIR |= 0x2A;  //RGB
-
 
     //Setup button for input and interrupt (P1.3)
     P1DIR &= ~BIT3;
@@ -231,9 +345,7 @@ void setupPins()
     P1IE |= BIT3;    //Enable interrupts
     P1IES |= BIT3;   //High to Low transition
     P1IFG &= ~BIT3;  //Clear interrupts
-
-	//Motor control pins
-
+	
 	//Any sensor pins
     return;
 }
@@ -253,6 +365,36 @@ void setupScheduleTimer()
     TA0CCTL0 &= ~CCIFG;                     //Clear interrupt flags
 
     return;
+}
+
+void motorSetup(struct MotorDC motor)
+{
+	P1DIR |= motor.pinA + motor.pinB;
+}
+
+void motorOutput(struct MotorDC motor)
+{
+	if (motor.pwm.state == 0)
+	{
+		P1OUT &= ~(motor.pinA + motor.pinB);
+	}
+	else
+	{
+		switch(motor.direction)
+		{
+		case 0:
+			P1OUT &= ~(motor.pinA + motor.pinB);
+			break;
+		case 1:
+			P1OUT |= motor.pinA;
+			P1OUT &= ~motor.pinB;
+			break;
+		case 2:
+			P1OUT |= motor.pinB;
+			P1OUT &= ~motor.pinA;
+			break;
+		}
+	}
 }
 
 //==============================================================================
