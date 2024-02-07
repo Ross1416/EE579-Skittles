@@ -25,6 +25,7 @@ Change History
 --------------------------------------------------------------------------------
 20-JAN-2024 SARK created general structure
 24-JAN-2024 SARK added DC motor / PWM functionality
+06-FEB-2024 SARK added RI functionality for ultrasonic readings
 --------------------------------------------------------------------------------
 */
 
@@ -47,17 +48,28 @@ struct flags {
 	char button;
 	char debounce;
 
+	char stateChange;
+
 	char timerA0;
 
 	char motorA;
 	char motorB;
+
+	char ultraStart;
+	char ultrasonicRead;
+
 };
 
 //Define Scheduler
 struct Scheduler {
 	struct Time debounce;
+
+	struct Time stateChange;
+
 	struct Time pwmMotorA;
 	struct Time pwmMotorB;
+
+	struct Time ultraStart;
 };
 
 //Define variable with PWM info
@@ -77,11 +89,21 @@ struct MotorDC {
     struct PWM pwm;
 };
 
+//Define variable containing ultrasonic sensor information
+struct Ultrasonic{
+    int distance;
+	int time[2];
+	char timeNumber;
+	char trigPin;
+    char echoPin;
+};
+
 //==============================================================================
 // Function Prototypes
 //------------------------------------------------------------------------------
 __interrupt void Port1_ISR(void);
 __interrupt void Timer0_A0_ISR(void);
+__interrupt void Timer1_A1_ISR (void);
 
 int     main(void);
 void    checkFlags();
@@ -89,6 +111,8 @@ void    checkSchedule();
 void    setupPins();
 void    setupScheduleTimer();
 void    timeIncrement(struct Time *time, int sec, int ms);
+void	ultrasonicSetup(struct Ultrasonic ultra);
+void    ultrasonicTrigger();
 void 	motorOutput(struct MotorDC motor);
 void 	motorSetup(struct MotorDC motor);
 
@@ -105,8 +129,10 @@ void 	motorSetup(struct MotorDC motor);
 #define SECOND_COUNT   1000
 #define TIMER_INC_MS   2
 
-//Frequency Tones
-#define LOW_FREQ    74
+//States
+#define START		0
+#define GO			1
+#define STOP		2
 
 //RGB colours (P2OUT |= RGB_XX;)
 #define RGB_RED     0x02
@@ -118,15 +144,39 @@ void 	motorSetup(struct MotorDC motor);
 #define RGB_WHITE   0x2A
 //RGB off command: (P2OUT &= ~0x2A;)
 
+//Motor direction commands
+#define STRAIGHT    0
+#define RIGHT       1
+#define LEFT        2
+
+#define OFF         0
+#define FORWARD     1
+#define BACK        2
+
+//Ultrasonic distance info
+#define TOLERANCE   20
+#define CANDIST   	200
+
 //==============================================================================
 // Global Variable Initialisation
 //------------------------------------------------------------------------------
+//Scheduling info
 struct Time currentTime     =   {0, 0};    //Running count of time
 struct Scheduler Schedule   =   {0};       //Schedule when events needing attended
 struct flags flag           =   {0};       //Flag when something ready to be attended
 
-struct MotorDC motorA = {0, BIT6, 0x00, {0, 100, 0, 50, 1}};  //Motor information (On Port 1)
-struct MotorDC motorB = {0, BIT0, 0x00, {0, 100, 0, 50, 1}};
+//What car should be doing
+char state	=	START;
+
+//Motor info (On Port 1)
+struct MotorDC motorA = {0, BIT4, BIT7, {0, 100, 0, 50, 1}};    //Drive
+struct MotorDC motorB = {0, BIT0, BIT1, {0, 100, 0, 100, 1}};   //Direction
+
+//Ultrasonic info (Port 2)
+struct Ultrasonic ultraA = {0, 0, 0, BIT0, BIT2};
+volatile int startingDistance;
+
+
 //==============================================================================
 // Functions
 //------------------------------------------------------------------------------
@@ -159,6 +209,23 @@ __interrupt void Timer0_A0_ISR(void)
     TA0CCTL0 &= ~CCIFG;
 }
 
+//Ultrasonic capture compare
+#pragma vector=TIMER1_A1_VECTOR
+__interrupt void Timer1_A1_ISR (void)
+{
+//    P1OUT |= BIT6;
+    ultraA.time[ultraA.timeNumber] = TA1CCR1;
+    ultraA.timeNumber++;
+    if (ultraA.timeNumber==2)
+    {
+        ultraA.distance = ultraA.time[1]-ultraA.time[0];
+        flag.ultrasonicRead=1;
+        ultraA.timeNumber=0;
+    }
+    TA1CTL &= ~TAIFG;
+    TA1CCTL1 &= ~CCIFG;
+}
+
 
 int main(void)
 {
@@ -169,23 +236,33 @@ int main(void)
     setupPins();
 	motorSetup(motorA);
 	motorSetup(motorB);
+	ultrasonicSetup(ultraA);
     setupScheduleTimer();
 
 
-    //Start or disable schedules
+    //Start / disable schedules
     Schedule.debounce.sec = 0;
     Schedule.debounce.ms = -1;
+
+	Schedule.stateChange.sec = 0;
+	Schedule.stateChange.ms = -1;
+
+	Schedule.ultraStart.sec = 0;
+	Schedule.ultraStart.ms = -1;
 
     //Start PWM of Motors
     timeIncrement(&Schedule.pwmMotorA, motorA.pwm.aSec, motorA.pwm.aMs);
     motorA.pwm.state = 1;
     flag.motorA = 1;
-    motorA.direction = 1;
+    motorA.direction = 0;
 
     timeIncrement(&Schedule.pwmMotorB, motorB.pwm.aSec, motorB.pwm.aMs);
     motorB.pwm.state = 1;
     flag.motorB = 1;
-    motorB.direction = 1;
+    motorB.direction = 0;
+
+    //P2OUT &= ~0x2A;
+	//P2OUT |= RGB_RED;
 
     __bis_SR_register(GIE);
 
@@ -196,7 +273,8 @@ int main(void)
             checkSchedule();	//Check if time to do anything
             flag.timerA0 = 0;
         }
-        else if(flag.debounce || flag.button || flag.motorA || flag.motorB)	//If something needs attended / or more flags as needed in condition
+        else if(flag.debounce || flag.button || flag.motorA || flag.motorB ||
+				flag.ultraStart || flag.ultrasonicRead || flag.stateChange)	//If something needs attended / or more flags as needed in condition
         {
 			checkFlags();		//Deal with what needs attended
         }
@@ -216,17 +294,25 @@ void checkSchedule()
         flag.debounce = 1;
     }
 
-	if(isTime(Schedule.pwmMotorA))  //Debounce button check
+	if(isTime(Schedule.stateChange))  //Debounce button check
     {
-		if(motorA.pwm.state)
+        flag.stateChange = 1;
+        Schedule.stateChange.sec = 0;
+        Schedule.stateChange.ms = -1;
+    }
+
+	if(isTime(Schedule.pwmMotorA))  //When PWM for driving motor changes state
+    {
+		if(motorA.pwm.state)        //If PWM high
 		{
+		    //Find time to be low for based on length of on time and total PWM period
 			incSec = motorA.pwm.sec-motorA.pwm.aSec;
 			incMs = motorA.pwm.ms-motorA.pwm.aMs;
 			timeIncrement(&(Schedule.pwmMotorA), incSec, incMs);
 			motorA.pwm.state = 0;
 			flag.motorA = 1;
 		}
-		else
+		else                        //If PWM low
 		{
 			timeIncrement(&Schedule.pwmMotorA, motorA.pwm.aSec, motorA.pwm.aMs);
 			motorA.pwm.state = 1;
@@ -241,9 +327,9 @@ void checkSchedule()
 		}
     }
 
-	if(isTime(Schedule.pwmMotorB))  //Debounce button check
+	if(isTime(Schedule.pwmMotorB))  //When PWM for steering motor changes state
     {
-		if(motorB.pwm.state)
+		if(motorB.pwm.state)        //If PWM high
 		{
 			incSec = motorB.pwm.sec-motorB.pwm.aSec;
 			incMs = motorB.pwm.ms-motorB.pwm.aMs;
@@ -251,7 +337,7 @@ void checkSchedule()
 			motorB.pwm.state = 0;
 			flag.motorB = 1;
 		}
-		else
+		else                        //If PWM low
 		{
 			timeIncrement(&Schedule.pwmMotorB, motorB.pwm.aSec, motorB.pwm.aMs);
 			motorB.pwm.state = 1;
@@ -274,23 +360,60 @@ void checkFlags()
 	{
 		if((P1IN & 0x08) != 0x08)   //Button still pressed after debounce
 		{
-		    //Toggle LED
-			P2OUT ^= 0x2A;
 
-			//Decrease motor speed on each press
-			motorA.pwm.aMs += 10;
-			if (motorA.pwm.aMs > motorA.pwm.ms) {motorA.pwm.aMs = 0;}
-
-			//Decrease motor speed on each press
-			motorB.pwm.aMs += 10;
-			if (motorB.pwm.aMs > motorB.pwm.ms) {motorB.pwm.aMs = 0;}
+			//Wait 2 seconds before starting to move
+			if (state == 0)
+			{
+			    timeIncrement(&Schedule.stateChange, 2, 0);
+			    ultrasonicTrigger();
+			}
+			if (state == 1)
+			{
+			    flag.stateChange = 1;
+			}
 		}
 		Schedule.debounce.sec = 0;
 		Schedule.debounce.ms = -1;
 		flag.debounce = 0;
 	}
 
-	if (flag.button)
+	if (flag.ultraStart)
+	{
+		ultrasonicTrigger();
+	}
+
+	if (flag.ultrasonicRead)            //When reading from ultrasonic has returned
+	{
+		if(state == START)
+		{
+			startingDistance = ultraA.distance;
+		}
+		else if (state == GO)
+		{
+			timeIncrement(&Schedule.ultraStart, 0, 20);
+		}
+
+	    if(ultraA.distance < startingDistance-CANDIST)            //When reading is suddenly closer
+	    {
+			flag.stateChange = 1;
+	    }
+	    else if(ultraA.distance < startingDistance-TOLERANCE)     //When drifted closer to wall
+	    {
+	        motorB.direction = RIGHT;
+	    }
+	    else if(ultraA.distance > startingDistance+TOLERANCE)     //When drifted further from wall
+	    {
+	        motorB.direction = LEFT;
+	    }
+	    else       //If right distance from wall drive straight
+	    {
+	        motorB.direction = STRAIGHT;
+	    }
+	    flag.motorB = 1;
+		flag.ultrasonicRead = 0;
+	}
+
+	if (flag.button)    //On button press start debounce
     {
         if(Schedule.debounce.sec == 0 && Schedule.debounce.ms == -1)   //If debounce not currently occurring
         {
@@ -299,17 +422,49 @@ void checkFlags()
         flag.button = 0;
     }
 
-	if (flag.motorA)
+	if (flag.motorA)    //If driving motor needs to change
     {
 		motorOutput(motorA);
 		flag.motorA = 0;
 	}
 
-	if (flag.motorB)
+	if (flag.motorB)    //If steering motor needs to change
     {
 		motorOutput(motorB);
 		flag.motorB = 0;
 	}
+
+	if (flag.stateChange)    //On button press start debounce
+    {
+        state++;
+		if (state == GO)
+		{
+			//P2OUT &= ~0x2A;
+			//P2OUT |= RGB_GREEN;
+
+			//Start driving forward
+			motorA.direction = FORWARD;
+	        flag.motorA = 1;
+			
+			//Initiate first ultrasonic reading
+			ultrasonicTrigger();
+
+
+		}
+		else if (state == STOP)
+		{
+			//P2OUT &= ~0x2A;
+			//P2OUT |= RGB_BLUE;
+
+			motorA.direction = OFF;
+	        flag.motorA = 1;
+		}
+		else
+		{
+			state = START;
+		}
+        flag.stateChange = 0;
+    }
 }
 
 void timeIncrement(struct Time *time, int sec, int ms)
@@ -335,7 +490,8 @@ void timeIncrement(struct Time *time, int sec, int ms)
 void setupPins()
 {
     //LEDs
-    P2DIR |= 0x2A;  //RGB
+    //P2DIR |= 0x2A;  //RGB
+    //P2OUT &= ~0x2A;
 
     //Setup button for input and interrupt (P1.3)
     P1DIR &= ~BIT3;
@@ -367,10 +523,42 @@ void setupScheduleTimer()
     return;
 }
 
+void ultrasonicSetup(struct Ultrasonic ultra)
+{
+
+    //echo
+    P2SEL |= BIT2;
+
+    //trig
+    P2DIR |= BIT0;
+    P2OUT &= ~BIT0;
+
+    //timer setup
+	TA1CTL |= TASSEL_1 + TAIE;
+	TA1CTL &= ~TAIFG;
+
+	TA1CCTL0 &= ~(CCIFG+CCIE);
+	TA1CCTL2 &= ~(CCIFG+CCIE);
+
+	TA1CCTL1 |= CM_3 + CCIS_1 + CAP + CCIE + SCS;
+	TA1CCTL1 &= ~CCIFG;
+
+	TA1CTL |= MC_2;
+}
+
+void ultrasonicTrigger()
+{
+	P2OUT |= BIT1;
+	__delay_cycles(20);
+	P2OUT &= ~BIT1;
+}
+
+
 void motorSetup(struct MotorDC motor)
 {
 	P1DIR |= motor.pinA + motor.pinB;
 }
+
 
 void motorOutput(struct MotorDC motor)
 {
