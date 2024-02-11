@@ -1,7 +1,7 @@
 ******************************************************************************
                   MSP430 Linker PC v21.6.1                     
 ******************************************************************************
->> Linked Sat Feb 10 19:44:46 2024
+>> Linked Sun Feb 11 18:01:15 2024
 
 OUTPUT FILE NAME:   <UltrasonicTest.out>
 ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 0000c218
@@ -143,7 +143,7 @@ MODULE SUMMARY
     +--+----------------------------+------+---------+---------+
        Total:                       262    4         11     
                                                             
-    C:\ti\ccs1240\ccs\tools\compiler\ti-cgt-msp430_21.6.1.LTS\lib\rts430_eabi.lib
+    C:\ti\ccs1260\ccs\tools\compiler\ti-cgt-msp430_21.6.1.LTS\lib\rts430_eabi.lib
        copy_decompress_lzss.c.obj   124    0         0      
        lsr16.asm.obj                76     0         0      
        autoinit.c.obj               66     0         0      

@@ -130,8 +130,10 @@ void 	motorSetup(struct MotorDC motor);
 #define SECOND_COUNT   1000
 #define TIMER_INC_MS   2
 
+#define ULTRASONIC_CLOCK_USED ACLK_FREQ
+
 #define isTime(X) ((currentTime.sec == X.sec) && (currentTime.ms == X.ms))
-#define dist2pulse(d) (d*2*CLOCK_USED)/(100*SOUND_SPEED)            // Converts a distance (cm) to ultrasonic sensor output pulse length
+#define dist2pulse(d) (d*2*ULTRASONIC_CLOCK_USED)/(100*SOUND_SPEED)            // Converts a distance (cm) to ultrasonic sensor output pulse length
 
 //States
 #define START		0
@@ -158,8 +160,8 @@ void 	motorSetup(struct MotorDC motor);
 #define BACK        2
 
 //Ultrasonic distance info
-#define TOLERANCE   20
-#define CANDIST   	200
+#define TOLERANCE   dist2pulse(5)
+#define CANDIST   	dist2pulse(10)
 
 
 //==============================================================================
@@ -219,25 +221,29 @@ __interrupt void Timer0_A0_ISR(void)
 __interrupt void Timer1_A1_ISR (void)
 {
 //    P1OUT |= BIT6;
-    if((TA1IV & 0xA) == 0xA)
+    switch(TA1IV)
     {
+    case 0xA:
         TA1CTL &= ~TAIFG;
-    }
-    else if ((TA1IV & 0x2) == 0x02)
-    {
+        break;
+    case 0x02:
         ultraA.time[ultraA.timeNumber] = TA1CCR1;
         ultraA.timeNumber++;
         if (ultraA.timeNumber==2)
         {
             ultraA.distance = ultraA.time[1]-ultraA.time[0];
-            flag.ultrasonicRead=1;
+            flag.ultrasonicRead = 1;
             ultraA.timeNumber=0;
+            TA1CCTL1 |= CM_1;
+        }
+        else{
+            TA1CCTL1 |= CM_2;
         }
         TA1CCTL1 &= ~CCIFG;
-    }
-    else if ((TA1IV & 0x4) == 0x04)
-    {
+        break;
+    case 0x04:
         TA1CCTL2 &= ~CCIFG;
+        break;
     }
 }
 
@@ -304,9 +310,9 @@ void checkSchedule()
     int incSec = 0;
     int incMs = 0;
 
-	if(isTime(Schedule.debounce))  //Debounce button check
+	if(isTime(Schedule.ultraStart))  //Debounce button check
     {
-        flag.debounce = 1;
+        flag.ultraStart = 1;
     }
 
 	if(isTime(Schedule.stateChange))  //Debounce button check
@@ -314,6 +320,11 @@ void checkSchedule()
         flag.stateChange = 1;
         Schedule.stateChange.sec = 0;
         Schedule.stateChange.ms = -1;
+    }
+
+    if(isTime(Schedule.debounce))  //Debounce button check
+    {
+        flag.debounce = 1;
     }
 
 	if(isTime(Schedule.pwmMotorA))  //When PWM for driving motor changes state
@@ -395,6 +406,7 @@ void checkFlags()
 	if (flag.ultraStart)
 	{
 		ultrasonicTrigger();
+		flag.ultraStart = 0;
 	}
 
 	if (flag.ultrasonicRead)            //When reading from ultrasonic has returned
@@ -405,7 +417,7 @@ void checkFlags()
 		}
 		else if (state == GO)
 		{
-			timeIncrement(&Schedule.ultraStart, 0, 20);
+			timeIncrement(&Schedule.ultraStart, 1, 0);
 		}
 
 	    if(ultraA.distance < startingDistance-CANDIST)            //When reading is suddenly closer
@@ -463,7 +475,6 @@ void checkFlags()
 			
 			//Initiate first ultrasonic reading
 			ultrasonicTrigger();
-
 
 		}
 		else if (state == STOP)
@@ -549,7 +560,17 @@ void ultrasonicSetup(struct Ultrasonic ultra)
     P2OUT = 0;
 
     //timer setup
-	TA1CTL |= TASSEL_1;
+
+    if(ULTRASONIC_CLOCK_USED == SMCK_FREQ)
+    {
+        TA1CTL |= TASSEL_2;
+    }
+    else
+    {
+        TA1CTL |= TASSEL_1;
+    }
+
+
 	TA1CTL &= ~TAIFG;
 	TA1CTL &= ~TAIE;
 
@@ -557,7 +578,7 @@ void ultrasonicSetup(struct Ultrasonic ultra)
 	TA1CCTL2 &= ~CCIE;
 	TA1CCTL2 &= ~CCIFG;
 
-	TA1CCTL1 |= CM_3 + CCIS_1 + CAP + CCIE + SCS;
+	TA1CCTL1 |= CM_1 + CCIS_1 + CAP + CCIE + SCS;
 	TA1CCTL1 &= ~CCIFG;
 
 	TA1CTL |= MC_2;
