@@ -26,6 +26,7 @@ Change History
 20-JAN-2024 SARK created general structure
 24-JAN-2024 SARK added DC motor / PWM functionality
 06-FEB-2024 SARK added RI functionality for ultrasonic readings
+11-FEB-2024 RI added distance 2 pulse length macro
 --------------------------------------------------------------------------------
 */
 
@@ -119,7 +120,7 @@ void 	motorSetup(struct MotorDC motor);
 //==============================================================================
 // MACRO
 //------------------------------------------------------------------------------
-#define isTime(X) ((currentTime.sec == X.sec) && (currentTime.ms == X.ms))
+#define SOUND_SPEED 343
 
 #define SMCK_FREQ      1000000
 #define ACLK_FREQ      32768
@@ -128,6 +129,9 @@ void 	motorSetup(struct MotorDC motor);
 #define LOW_POWER      LPM0
 #define SECOND_COUNT   1000
 #define TIMER_INC_MS   2
+
+#define isTime(X) ((currentTime.sec == X.sec) && (currentTime.ms == X.ms))
+#define dist2pulse(d) (d*2*CLOCK_USED)/(100*SOUND_SPEED)            // Converts a distance (cm) to ultrasonic sensor output pulse length
 
 //States
 #define START		0
@@ -156,6 +160,7 @@ void 	motorSetup(struct MotorDC motor);
 //Ultrasonic distance info
 #define TOLERANCE   20
 #define CANDIST   	200
+
 
 //==============================================================================
 // Global Variable Initialisation
