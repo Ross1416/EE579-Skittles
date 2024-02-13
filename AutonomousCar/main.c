@@ -133,7 +133,7 @@ void 	motorSetup(struct MotorDC motor);
 #define ULTRASONIC_CLOCK_USED ACLK_FREQ
 
 #define isTime(X) ((currentTime.sec == X.sec) && (currentTime.ms == X.ms))
-#define dist2pulse(d) (d*2*ULTRASONIC_CLOCK_USED)/(100*SOUND_SPEED)            // Converts a distance (cm) to ultrasonic sensor output pulse length
+#define dist2pulse(d) ((ULTRASONIC_CLOCK_USED/100)*d*2/SOUND_SPEED)     // Converts a distance (cm) to ultrasonic sensor output pulse length
 
 //States
 #define START		0
@@ -160,9 +160,11 @@ void 	motorSetup(struct MotorDC motor);
 #define BACK        2
 
 //Ultrasonic distance info
-#define TOLERANCE   dist2pulse(5)
-#define CANDIST   	dist2pulse(10)
+//#define TOLERANCE   dist2pulse(5)
+//#define CANDIST   	dist2pulse(20)
 
+int TOLERANCE = dist2pulse(5);
+int CANDIST = dist2pulse(20);
 
 //==============================================================================
 // Global Variable Initialisation
@@ -177,7 +179,8 @@ char state	=	START;
 
 //Motor info (On Port 1)
 struct MotorDC motorA = {0, BIT4, BIT7, {0, 100, 0, 50, 1}};    //Drive
-struct MotorDC motorB = {0, BIT0, BIT1, {0, 100, 0, 100, 1}};   //Direction
+//struct MotorDC motorB = {0, BIT0, BIT1, {0, 100, 0, 100, 1}};   //Direction
+struct MotorDC motorB = {0, BIT5, BIT6, {0, 100, 0, 100, 1}};   //Direction
 
 //Ultrasonic info (Port 2)
 struct Ultrasonic ultraA = {0, {0, 0}, 0, BIT0, BIT2};
@@ -251,6 +254,7 @@ __interrupt void Timer1_A1_ISR (void)
 int main(void)
 {
 	//Stop watchdog timer
+
     WDTCTL = WDTPW | WDTHOLD;
 
     //Setup device
@@ -417,7 +421,7 @@ void checkFlags()
 		}
 		else if (state == GO)
 		{
-			timeIncrement(&Schedule.ultraStart, 1, 0);
+			timeIncrement(&Schedule.ultraStart, 0, 20);
 		}
 
 	    if(ultraA.distance < startingDistance-CANDIST)            //When reading is suddenly closer
