@@ -27,6 +27,7 @@ Change History
 24-JAN-2024 SARK added DC motor / PWM functionality
 06-FEB-2024 SARK added RI functionality for ultrasonic readings
 11-FEB-2024 RI added distance 2 pulse length macro
+21-FEB-2024 SARK corrections for steering alongside wall
 --------------------------------------------------------------------------------
 */
 
@@ -90,6 +91,15 @@ struct MotorDC {
     struct PWM pwm;
 };
 
+//Define variable containing servo motor information
+struct Servo{
+    int distance;
+    int time[2];
+    char timeNumber;
+    char trigPin;
+    char echoPin;
+};
+
 //Define variable containing ultrasonic sensor information
 struct Ultrasonic{
     int distance;
@@ -114,6 +124,7 @@ void    setupScheduleTimer();
 void    timeIncrement(struct Time *time, int sec, int ms);
 void	ultrasonicSetup(struct Ultrasonic ultra);
 void    ultrasonicTrigger();
+void    wallAlignment();
 void 	motorOutput(struct MotorDC motor);
 void 	motorSetup(struct MotorDC motor);
 
@@ -139,6 +150,14 @@ void 	motorSetup(struct MotorDC motor);
 #define START		0
 #define GO			1
 #define STOP		2
+
+//Turn States
+#define STRAIGHT    0
+#define AWAY        1
+#define CLOSE       2
+#define STRAIGHTEN  3
+
+#define WALLREADINGS  3
 
 //RGB colours (P2OUT |= RGB_XX;)
 #define RGB_RED     0x02
@@ -178,13 +197,22 @@ struct flags flag           =   {0};       //Flag when something ready to be att
 char state	=	START;
 
 //Motor info (On Port 1)
-struct MotorDC motorA = {0, BIT4, BIT7, {0, 100, 0, 100, 1}};    //Drive
-//struct MotorDC motorB = {0, BIT0, BIT1, {0, 100, 0, 100, 1}};   //Direction
-struct MotorDC motorB = {0, BIT5, BIT6, {0, 100, 0, 100, 1}};   //Direction
+struct MotorDC motorA = {0, BIT4, BIT7, {0, 100, 0, 100, 1}};	//Drive
+struct MotorDC motorB = {0, BIT5, BIT6, {0, 100, 0, 100, 1}};	//Direction
 
 //Ultrasonic info (Port 2)
 struct Ultrasonic ultraA = {0, {0, 0}, 0, BIT0, BIT2};
 volatile int startingDistance;
+
+//Distance to wall values
+int wallTolerance = dist2pulse(5);
+int canDetectDist = dist2pulse(20);
+
+//Wall drive control
+char turnState = STRAIGHT;
+int  wallDistances[WALLREADINGS] = {0};
+char turnStateTime = 0;
+
 
 
 //==============================================================================
@@ -223,7 +251,6 @@ __interrupt void Timer0_A0_ISR(void)
 #pragma vector=TIMER1_A1_VECTOR
 __interrupt void Timer1_A1_ISR (void)
 {
-//    P1OUT |= BIT6;
     switch(TA1IV)
     {
     case 0xA:
@@ -232,15 +259,21 @@ __interrupt void Timer1_A1_ISR (void)
     case 0x02:
         ultraA.time[ultraA.timeNumber] = TA1CCR1;
         ultraA.timeNumber++;
-        if (ultraA.timeNumber==2)
+        if (ultraA.timeNumber==2)       //After up/down edges of feedback
         {
             ultraA.distance = ultraA.time[1]-ultraA.time[0];
+            if (ultraA.distance < 0)    //When timer wrapped
+            {
+                ultraA.distance += 0xFFFF;
+            }
             flag.ultrasonicRead = 1;
             ultraA.timeNumber=0;
-            TA1CCTL1 |= CM_1;
+            TA1CCTL1 |= CM_1;   //Capture on rising edge
         }
+        else
+        {
+            TA1CCTL1 |= CM_2;   //Capture on falling edge
         else{
-            TA1CCTL1 |= CM_2;
         }
         TA1CCTL1 &= ~CCIFG;
         break;
@@ -386,6 +419,8 @@ void checkSchedule()
 
 void checkFlags()
 {
+    char i = 0;
+
 	if(flag.debounce)
 	{
 		if((P1IN & 0x08) != 0x08)   //Button still pressed after debounce
@@ -415,38 +450,28 @@ void checkFlags()
 
 	if (flag.ultrasonicRead)            //When reading from ultrasonic has returned
 	{
+		for(i = 1; i < WALLREADINGS; i++)
+		{
+			wallDistances[i] = wallDistances[i - 1];
+		}
+		wallDistances[0] = ultraA.distance;
+		
 		if(state == START)
 		{
-			startingDistance = ultraA.distance;
+			startingDistance = wallDistances[0];	//On start get distance to wall
 		}
 		else if (state == GO)
 		{
-			timeIncrement(&Schedule.ultraStart, 0, 20);
+			timeIncrement(&Schedule.ultraStart, 0, 20);	//In follow wall state get new reading in 20 ms
 		}
 
-	    if(ultraA.distance < startingDistance-CANDIST)            //When reading is suddenly closer
+	    if(wallDistances[0] < startingDistance-canDetectDist)            //When reading is suddenly closer
 	    {
 			flag.stateChange = 1;
 	    }
-	    else if(ultraA.distance < startingDistance-TOLERANCE)     //When drifted closer to wall
-	    {
-	        motorB.direction = RIGHT;
-	        P1OUT &= ~BIT5;
-	        P1OUT |= BIT6;
-	    }
-	    else if(ultraA.distance > startingDistance+TOLERANCE)     //When drifted further from wall
-	    {
-	        motorB.direction = LEFT;
-	        P1OUT |= BIT5;
-	        P1OUT &= ~BIT6;
-	    }
-	    else       //If right distance from wall drive straight
-	    {
-	        motorB.direction = STRAIGHT;
-	        P1OUT &= ~BIT5;
-	        P1OUT &= ~BIT6;
-	    }
-	    flag.motorB = 1;
+		
+		wallAlignment();
+
 		flag.ultrasonicRead = 0;
 	}
 
@@ -538,7 +563,6 @@ void setupPins()
     P1IES |= BIT3;   //High to Low transition
     P1IFG &= ~BIT3;  //Clear interrupts
 	
-	//Any sensor pins
     return;
 }
 
@@ -562,15 +586,14 @@ void setupScheduleTimer()
 void ultrasonicSetup(struct Ultrasonic ultra)
 {
 
-    //echo
+    //Echo pin
     P2SEL |= BIT2;
 
-    //trig
+    //Trig pin
     P2DIR |= BIT0;
     P2OUT = 0;
 
-    //timer setup
-
+    //Timer Setup
     if(ULTRASONIC_CLOCK_USED == SMCK_FREQ)
     {
         TA1CTL |= TASSEL_2;
@@ -579,7 +602,6 @@ void ultrasonicSetup(struct Ultrasonic ultra)
     {
         TA1CTL |= TASSEL_1;
     }
-
 
 	TA1CTL &= ~TAIFG;
 	TA1CTL &= ~TAIE;
@@ -599,6 +621,88 @@ void ultrasonicTrigger()
 	P2OUT |= BIT0;
 	__delay_cycles(20);
 	P2OUT &= ~BIT0;
+}
+
+void wallAlignment()
+{
+	char turnStatePrevious = turnState;
+	char i = 0;
+	//When state change is based on measured distance to wall
+	if(wallDistances[0] < startingDistance-wallTolerance)		//When drifted closer to wall
+	{
+		turnState = AWAY;
+	}
+	else if(wallDistances[0] > startingDistance+wallTolerance)	//When drifted further from wall
+	{
+		turnState = CLOSE;
+	}
+	else       												//If right distance from wall drive straight
+	{
+		turnState = STRAIGHT;
+	}
+	
+	
+	//When state change depends on if distance is increasing
+	if (turnState == CLOSE | turnState == STRAIGHTEN)
+	{
+		//Determine distance is increasing
+		for(i = 0; i < WALLREADINGS-1; i++)
+		{
+			if(wallDistances[i] < wallDistances[i + 1])	//Check if distance decreasing
+			{
+				break;	//If so break out of loop
+			}
+		}
+		if (i == WALLREADINGS-1)	//Distance measured is increasing
+		{
+			switch(turnState)
+			{
+			case CLOSE:
+				turnState = STRAIGHTEN;
+				break;
+			case STRAIGHTEN:
+				turnState = STRAIGHT;
+				break;
+			}
+		}
+	}
+	
+	//When in same state as before
+	if (turnState == turnStatePrevious)
+	{
+		//When in same state for long enough but not straight state
+		if((++turnStateTime) >= 5 && (turnState != STRAIGHT))
+		{
+			motorA.pwm.aMs = 50;	//Halve driving speed
+		}
+		else
+		{
+			motorA.pwm.aMs = 100;	//Full speed
+		}
+	}
+	else
+	{
+		turnStateTime = 0;	//Changed state so reset timer
+		motorA.pwm.aMs = 100;	//Full speed
+		
+		switch(turnState)
+		{
+		case STRAIGHT:
+			motorB.direction = STRAIGHT;
+			break;
+		case AWAY:
+			motorB.direction = RIGHT;
+			break;
+		case CLOSE:
+			motorB.direction = LEFT;
+			break;
+		case STRAIGHTEN:
+			motorB.direction = RIGHT;
+			break;
+		}
+		flag.motorB = 1;
+	}
+
 }
 
 
