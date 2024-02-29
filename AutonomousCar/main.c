@@ -163,8 +163,8 @@ void 	motorSetup(struct MotorDC motor);
 //#define TOLERANCE   dist2pulse(5)
 //#define CANDIST   	dist2pulse(20)
 
-int TOLERANCE = dist2pulse(5);
-int CANDIST = dist2pulse(20);
+int TOLERANCE = dist2pulse(1);
+int CANDIST = dist2pulse(10);
 
 //==============================================================================
 // Global Variable Initialisation
@@ -178,7 +178,7 @@ struct flags flag           =   {0};       //Flag when something ready to be att
 char state	=	START;
 
 //Motor info (On Port 1)
-struct MotorDC motorA = {0, BIT4, BIT7, {0, 100, 0, 50, 1}};    //Drive
+struct MotorDC motorA = {0, BIT4, BIT7, {0, 100, 0, 100, 1}};    //Drive
 //struct MotorDC motorB = {0, BIT0, BIT1, {0, 100, 0, 100, 1}};   //Direction
 struct MotorDC motorB = {0, BIT5, BIT6, {0, 100, 0, 100, 1}};   //Direction
 
@@ -281,9 +281,9 @@ int main(void)
     flag.motorA = 1;
     motorA.direction = 0;
 
-    timeIncrement(&Schedule.pwmMotorB, motorB.pwm.aSec, motorB.pwm.aMs);
+//    timeIncrement(&Schedule.pwmMotorB, motorB.pwm.aSec, motorB.pwm.aMs);
     motorB.pwm.state = 1;
-    flag.motorB = 1;
+    flag.motorB = 0;
     motorB.direction = 0;
 
     //P2OUT &= ~0x2A;
@@ -431,14 +431,20 @@ void checkFlags()
 	    else if(ultraA.distance < startingDistance-TOLERANCE)     //When drifted closer to wall
 	    {
 	        motorB.direction = RIGHT;
+	        P1OUT &= ~BIT5;
+	        P1OUT |= BIT6;
 	    }
 	    else if(ultraA.distance > startingDistance+TOLERANCE)     //When drifted further from wall
 	    {
 	        motorB.direction = LEFT;
+	        P1OUT |= BIT5;
+	        P1OUT &= ~BIT6;
 	    }
 	    else       //If right distance from wall drive straight
 	    {
 	        motorB.direction = STRAIGHT;
+	        P1OUT &= ~BIT5;
+	        P1OUT &= ~BIT6;
 	    }
 	    flag.motorB = 1;
 		flag.ultrasonicRead = 0;
@@ -461,7 +467,7 @@ void checkFlags()
 
 	if (flag.motorB)    //If steering motor needs to change
     {
-		motorOutput(motorB);
+//		motorOutput(motorB);
 		flag.motorB = 0;
 	}
 
@@ -599,6 +605,8 @@ void ultrasonicTrigger()
 void motorSetup(struct MotorDC motor)
 {
 	P1DIR |= motor.pinA + motor.pinB;
+	P1OUT &= ~motor.pinA;
+	P1OUT &= ~motor.pinB;
 }
 
 
