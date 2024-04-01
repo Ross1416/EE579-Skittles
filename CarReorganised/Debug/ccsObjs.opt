@@ -1,0 +1,6 @@
+"./DCMotor.obj"
+"./Servo.obj"
+"./Ultrasonic.obj"
+"./main.obj"
+"../lnk_msp430g2553.cmd"
+-llibc.a
