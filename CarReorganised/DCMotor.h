@@ -35,11 +35,12 @@ struct MotorDC {
 extern void    motorOutput(struct MotorDC *motor);
 extern void    motorSetup(struct MotorDC *motor);
 
-//Motor direction commands
+//Motor steer commands
 #define STRAIGHT    0
 #define RIGHT       1
 #define LEFT        2
 
+//Motor drive commands
 #define OFF         0
 #define FORWARD     1
 #define BACK        2

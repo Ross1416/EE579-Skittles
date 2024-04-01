@@ -10,15 +10,6 @@ Description : Main script to control functions of the autonomous vehicle
 --------------------------------------------------------------------------------
 Functions Present
 --------------------------------------------------------------------------------
-Port1_ISR()
-Timer0_A0_ISR()
-
-main(void);
-checkFlags();
-checkSchedule();
-setupButton();
-setupScheduleTimer();
-timeIncrement();
 
 --------------------------------------------------------------------------------
 Change History
@@ -66,9 +57,6 @@ struct flags {
     char motorDrive;
     char motorSteer;
 
-    //To trigger ultrasonic
-    char ultraStart;
-
     //To read ultrasonic when result available
     char ultrasonicRead;
 };
@@ -82,11 +70,8 @@ struct Scheduler {
     struct Time stateChange;
 
     //Time at which motor PWM should change
-    struct Time pwmmotorDrive;
-    struct Time pwmmotorSteer;
-
-    //Time at which ultrasonic should be triggered
-    struct Time ultraStart;
+    struct Time pwmMotorDrive;
+    struct Time pwmMotorSteer;
 };
 
 //==============================================================================
@@ -183,7 +168,9 @@ char turnState = STRAIGHT;				//Wall alignment turning instruction
 int  wallDistances[WALLREADINGS] = {0};	//Distance readings to wall
 char turnStateTime = 0;					//Time spent turning to correct for wall
 
-
+//Flags for after main flags are dealt with and then results are used for stateControl()
+char buttonPressed = 0;
+char ultraRead = 0;
 //==============================================================================
 // Functions
 //------------------------------------------------------------------------------
@@ -266,22 +253,20 @@ int main(void)
 	setupTimerRADAR();
     setupTimerSchedule();
 
-    //Initial schedules
+    //Disable schedules
     Schedule.debounce.sec = 0;
     Schedule.debounce.ms = -1;
 
     Schedule.stateChange.sec = 0;
     Schedule.stateChange.ms = -1;
 
-    Schedule.ultraStart.sec = 0;
-    Schedule.ultraStart.ms = -1;
-
-    timeIncrement(&Schedule.pwmmotorDrive, motorDrive.pwm.aSec, motorDrive.pwm.aMs);
+	//Start DC motor PWM schedules but set both motors output to do nothing
+    timeIncrement(&Schedule.pwmMotorDrive, motorDrive.pwm.aSec, motorDrive.pwm.aMs);
     motorDrive.pwm.state = 1;
     flag.motorDrive = 1;
     motorDrive.direction = 0;
 
-    timeIncrement(&Schedule.pwmmotorSteer, motorSteer.pwm.aSec, motorSteer.pwm.aMs);
+    timeIncrement(&Schedule.pwmMotorSteer, motorSteer.pwm.aSec, motorSteer.pwm.aMs);
     motorSteer.pwm.state = 1;
     flag.motorSteer = 1;
     motorSteer.direction = 0;
@@ -300,7 +285,7 @@ int main(void)
         else
         {
             checkFlags();       //Deal with what needs attended
-			stateControl();
+			stateControl();		//Control behaviour of car
         }
     }
 }
@@ -310,40 +295,59 @@ void checkSchedule()
     int incSec = 0;
     int incMs = 0;
 
-    if(isTime(Schedule.ultraStart))  //Time to start ultrasonic reading
+	//Time for car to change behaviour
+    if(isTime(Schedule.stateChange))
     {
-        flag.ultraStart = 1;
-    }
-
-    if(isTime(Schedule.stateChange))  //Time for car to change behaviour check
-    {
+		//Attend to in checkFlags()
         flag.stateChange = 1;
+		
+		//Disable schedule
         Schedule.stateChange.sec = 0;
         Schedule.stateChange.ms = -1;
     }
-
-    if(isTime(Schedule.debounce))  //Debounce button check
+	
+	//Time to check button debounce
+    if(isTime(Schedule.debounce))
     {
+		//Attend to in checkFlags()
         flag.debounce = 1;
+		
+		//Disable schedule
+		Schedule.debounce.sec = 0;
+        Schedule.debounce.ms = -1;
     }
 
-    if(isTime(Schedule.pwmmotorDrive))  //When PWM for driving motor changes state
+	//Control PWM for DC motors
+    if(isTime(Schedule.pwmMotorDrive))
     {
-        if(motorDrive.pwm.state)        //If PWM high
+        if(motorDrive.pwm.state)	//If PWM high
         {
-            //Find time to be low for based on length of on time and total PWM period
+            //Find time to be LOW based on duration of HIGH and PWM period
             incSec = motorDrive.pwm.sec-motorDrive.pwm.aSec;
             incMs = motorDrive.pwm.ms-motorDrive.pwm.aMs;
-            timeIncrement(&(Schedule.pwmmotorDrive), incSec, incMs);
+			
+			//Schedule time to become HIGH again
+            timeIncrement(&(Schedule.pwmMotorDrive), incSec, incMs);
+			
+			//Set PWM low
             motorDrive.pwm.state = 0;
+			
+			//Attend to in checkFlags() to turn off motor as PWM is low
             flag.motorDrive = 1;
         }
-        else                        //If PWM low
+        else						//If PWM low
         {
-            timeIncrement(&Schedule.pwmmotorDrive, motorDrive.pwm.aSec, motorDrive.pwm.aMs);
-            motorDrive.pwm.state = 1;
-            if (motorDrive.pwm.aMs == 0) //If no on time to PWM
+			//Set time to become LOW again
+            timeIncrement(&Schedule.pwmMotorDrive, motorDrive.pwm.aSec, motorDrive.pwm.aMs);
+            
+			//Set PWM high
+			motorDrive.pwm.state = 1;
+			
+			//Attend to in checkFlags() to turn on motor as PWM is high
+            if (motorDrive.pwm.aMs == 0)
             {
+				//If PWM is always low do not change as scheduler takes
+				//short time to then make low again so motor is on momentarily
                 flag.motorDrive = 0;
             }
             else
@@ -353,21 +357,22 @@ void checkSchedule()
         }
     }
 
-    if(isTime(Schedule.pwmmotorSteer))  //When PWM for steering motor changes state
+	//See behavioural comments above
+    if(isTime(Schedule.pwmMotorSteer))
     {
-        if(motorSteer.pwm.state)        //If PWM high
+        if(motorSteer.pwm.state)
         {
             incSec = motorSteer.pwm.sec-motorSteer.pwm.aSec;
             incMs = motorSteer.pwm.ms-motorSteer.pwm.aMs;
-            timeIncrement(&(Schedule.pwmmotorSteer), incSec, incMs);
+            timeIncrement(&(Schedule.pwmMotorSteer), incSec, incMs);
             motorSteer.pwm.state = 0;
             flag.motorSteer = 1;
         }
-        else                        //If PWM low
+        else
         {
-            timeIncrement(&Schedule.pwmmotorSteer, motorSteer.pwm.aSec, motorSteer.pwm.aMs);
+            timeIncrement(&Schedule.pwmMotorSteer, motorSteer.pwm.aSec, motorSteer.pwm.aMs);
             motorSteer.pwm.state = 1;
-            if (motorDrive.pwm.aMs == 0) //If no on time to PWM
+            if (motorDrive.pwm.aMs == 0)
             {
                 flag.motorSteer = 0;
             }
@@ -389,55 +394,27 @@ void checkFlags()
     {
         if((P1IN & 0x08) != 0x08)   //Button still pressed after debounce
         {
-            //Wait 2 seconds before starting to move
-            if (state == 0)
-            {
-                timeIncrement(&Schedule.stateChange, 2, 0);
-                ultrasonicTrigger(&ultraWall);
-            }
-			//If pressed in other state then will stop the car
-            if (state == 1)
-            {
-                flag.stateChange = 1;
-            }
+			///Attend to in stateControl()
+			buttonPressed = 1;
         }
         Schedule.debounce.sec = 0;
         Schedule.debounce.ms = -1;
         flag.debounce = 0;
     }
 
-	//It's time to start an altrasonic distance reading
-    if (flag.ultraStart)
-    {
-        ultrasonicTrigger(&ultraWall);
-        flag.ultraStart = 0;
-    }
-
 	//Ultrasonic has reading ready
-    if (flag.ultrasonicRead)            //When reading from ultrasonic has returned
+    if (flag.ultrasonicRead)
     {
+		//Update array of wall readings
         for(i = 1; i < WALLREADINGS; i++)
         {
             wallDistances[i] = wallDistances[i - 1];
         }
         wallDistances[0] = ultraWall.distance;
-
-        if(state == START)
-        {
-            startingDistance = wallDistances[0];    //On start get distance to wall
-        }
-        else if (state == GO)
-        {
-            timeIncrement(&Schedule.ultraStart, 0, 20); //In follow wall state get new reading in 20 ms
-        }
-
-        if(wallDistances[0] < startingDistance-canDetectDist)            //When reading is suddenly closer
-        {
-            flag.stateChange = 1;
-        }
-
-        alignToWall();
-
+		
+		///Attend to in stateControl()
+		ultraRead = 1;
+		
         flag.ultrasonicRead = 0;
     }
 
@@ -454,6 +431,7 @@ void checkFlags()
 	//Drive motor needs to change behaviour
     if (flag.motorDrive)
     {
+		//Alter behaviour as has been updated
         motorOutput(&motorDrive);
         flag.motorDrive = 0;
     }
@@ -461,6 +439,7 @@ void checkFlags()
 	//Steering motor needs to change behaviour
     if (flag.motorSteer)    //If steering motor needs to change
     {
+		//Alter behaviour as has been updated
         motorOutput(&motorSteer);
         flag.motorSteer = 0;
     }
@@ -468,7 +447,10 @@ void checkFlags()
 	//Time to change state
     if (flag.stateChange)    //On button press start debounce
     {
+		//Increase to next state (May need to become more specific)
         state++;
+		
+		//Events to occur when changing to GO state
         if (state == GO)
         {
             //Start driving forward
@@ -477,12 +459,9 @@ void checkFlags()
 
             //Initiate first ultrasonic reading
             ultrasonicTrigger(&ultraWall);
-
         }
         else if (state == STOP)
         {
-            motorDrive.direction = OFF;
-            flag.motorDrive = 1;
         }
         else
         {
@@ -494,32 +473,64 @@ void checkFlags()
 
 void stateControl()
 {
-	if(state == Start)
+	//On start up state
+	if(state == START)
 	{
 		//Do nothing until button pressed
+		//On button press do an initial ultrasonic wall reading 
+		//& schedule to next state to start moving
+		if (buttonPressed)
+		{
+			ultrasonicTrigger(&ultraWall);
+			timeIncrement(&Schedule.stateChange, 1, 0);
+			buttonPressed = 0;
+		}
 		
-		//On button press do an initial ultrasonic reading
-		
-		//Schedule state to change to GO for some time after first ultrasonic reading
+		//Use initial ultrasonic reading as distance to wall to maintain
+		if (ultraRead)
+		{
+			startingDistance = wallDistances[0];
+			ultraRead = 0;
+		}
 	}
 	
+	//On follow wall and detect can state
 	if(state == GO)
 	{
-		//Drive forward at start
-		
-		//Continuously take ultrasonic readings to wall
+		//Drive forward at start (Done in state change)
+		//Continuously take ultrasonic readings to wall (Started in state change)
+		if (ultraRead)
+		{
+			//When reading is suddenly closer can detected so change state
+			if(wallDistances[0] < startingDistance-canDetectDist)
+			{
+				flag.stateChange = 1;	//Change state to stop
+			}
+			
+			//Use latest reading to keep aligned to wall
+			alignToWall();
+			
+			//Trigger next reading
+			ultrasonicTrigger(&ultraWall);
+			ultraRead = 0;
+		}
 		
 		//Possibly swivel RADAR and take some forward readings simultaneously to detect can
 		
-		//Use readings to stay aligned with the wall
-		
-		//Stop when can detected
-		
+		//Stop if button pressed (FOR TESTING IF FAILS TO STOP)
+		if (buttonPressed)
+        {
+			state = STOP;
+			buttonPressed = 0;
+        }
 	}
 	
+	//On stop moving state
 	if(state == STOP)
 	{
 		//Stop all motors and readings
+		motorDrive.direction = OFF;
+        flag.motorDrive = 1;
 	}
 }
 
@@ -530,6 +541,7 @@ void timeIncrement(struct Time *time, int sec, int ms)
     ms += TIMER_INC_MS;
     ms -= ms % TIMER_INC_MS;
 
+	//Add to current time and if more then max ms add to seconds
     time->ms = currentTime.ms + ms;
     while(time->ms >= SECOND_COUNT)
     {
@@ -537,6 +549,7 @@ void timeIncrement(struct Time *time, int sec, int ms)
         sec++;
     }
 
+	//Add to current time and if more then max s wrap back to 0
     time->sec = currentTime.sec + sec;
     while(time->sec >= 60)
     {
@@ -548,6 +561,7 @@ void setupButton()
 {
     //Setup button for input and interrupt (P1.3)
     P1DIR &= ~BIT3;
+	
     //Pull up so when pressed will go high to low
     P1REN |= BIT3;
     P1OUT |= BIT3;
@@ -566,9 +580,9 @@ void setupTimerSchedule()
     {
         TA0CTL |= TASSEL_1 + MC_1;              //ACLK  so f = 32768 Hz, operating in up mode to TA0CCR0
     }
-    TA0CCTL0 |= 0x10;                       //Interrupt occurs when TA0R reaches TA0CCR0
-    TA0CCR0 = CLOCK_USED_SCHEDULER*TIMER_INC_MS/1000; //Set the count to value (5 ms) f*5ms = 5000
-    TA0CCTL0 &= ~CCIFG;                     //Clear interrupt flags
+    TA0CCTL0 |= 0x10;                       			//Interrupt occurs when TA0R reaches TA0CCR0
+    TA0CCR0 = CLOCK_USED_SCHEDULER*TIMER_INC_MS/1000; 	//Set the count to schedule time, e.g 1 MHz*5ms = 5000
+    TA0CCTL0 &= ~CCIFG;                     			//Clear interrupt flags
 }
 
 void setupTimerRADAR()
@@ -589,7 +603,7 @@ void setupTimerRADAR()
     TA1CCTL2 &= ~CCIE;			//Clear and disable timer2 interrupt
     TA1CCTL2 &= ~CCIFG;
 	
-	//Start counting to TA1CCR0 (Defined in servo setup)
+	//Count to TA1CCR0 (Defined in servo setup)
     TA1CTL |= MC_1;
 }
 
@@ -616,22 +630,23 @@ void alignToWall()
     //When state change depends on if distance is increasing
     if (turnState == CLOSE | turnState == STRAIGHTEN)
     {
-        //Determine distance is increasing
+        //Determine if distance is increasing
         for(i = 0; i < WALLREADINGS-1; i++)
         {
-            if(wallDistances[i] < wallDistances[i + 1]) //Check if distance decreasing
+            if(wallDistances[i] < wallDistances[i + 1]) //Check if distance ever decreases
             {
                 break;  //If so break out of loop
             }
         }
+		//If for loop went to completion
         if (i == WALLREADINGS-1)    //Distance measured is increasing
         {
             switch(turnState)
             {
-            case CLOSE:
+            case CLOSE:		//Was turning towards wall so needs to straighten back out
                 turnState = STRAIGHTEN;
                 break;
-            case STRAIGHTEN:
+            case STRAIGHTEN:	//Was straightening out but over corrected go straight and back to first if correction
                 turnState = STRAIGHT;
                 break;
             }
@@ -641,7 +656,8 @@ void alignToWall()
     //When in same state as before
     if (turnState == turnStatePrevious)
     {
-        //When in same state for long enough but not straight state
+        //When in same state for long enough but not straight state, 
+		//slow down to not overshoot corrections
         if((++turnStateTime) >= 5 && (turnState != STRAIGHT))
         {
             motorDrive.pwm.aMs = 50;    //Half driving speed
@@ -656,6 +672,7 @@ void alignToWall()
         turnStateTime = 0;  //Changed state so reset timer
         motorDrive.pwm.aMs = 100;   //Full speed
 
+		//Control steering according to new state
         switch(turnState)
         {
         case STRAIGHT:
