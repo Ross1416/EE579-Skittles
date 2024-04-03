@@ -22,6 +22,7 @@ struct Ultrasonic{
     char timeNumber;
     char trigPin;
     char echoPin;
+    char port;
 };
 
 extern void    ultrasonicSetup(struct Ultrasonic *ultra);
@@ -29,7 +30,7 @@ extern void    ultrasonicTrigger(struct Ultrasonic *ultra);
 
 #define SMCK_FREQ      1000000
 #define ACLK_FREQ      32768
-#define CLOCK_USED_ULTRASONIC   ACLK_FREQ
+#define CLOCK_USED_ULTRASONIC   SMCK_FREQ
 #define dist2pulse(d)           ((CLOCK_USED_ULTRASONIC/100)*d*2/SOUND_SPEED)     // Converts a distance (cm) to ultrasonic sensor output pulse length
 
 #endif // ULTRASONIC_H

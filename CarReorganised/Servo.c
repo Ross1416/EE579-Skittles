@@ -15,8 +15,8 @@ Change History
 void servoSetup(struct Servo *servoMotor)
 {
     //Servo Timer settings
-    TA1CCR0 = 655; //20 ms at ACLK (Max count value)
-    TA1CCR2 = 49;  //1.5 ms
+    TA1CCR0 = 20000; //20 ms at SMCLK (Max count value)
+    TA1CCR2 = 1500;  //1.5 ms
 
     //Output B (P2.4), Reset/Set output
     TA1CCTL2 &= ~(CCIE + CCIFG + CAP);      //Clear/disable Timer1.2 interrupt and set compare mode
@@ -29,15 +29,15 @@ void servoSetup(struct Servo *servoMotor)
 
 void servoTurn(struct Servo *servoMotor)
 {
-    if (TA1CCR2 >= 80)
+    if (TA1CCR2 >= 2200)        //2 ms
     {
-        servoMotor->direction = -1;
+        servoMotor->direction = -20;
         P2OUT &= ~RGB_WHITE;
         P2OUT |= RGB_BLUE;
     }
-    else if (TA1CCR2 <= 35)
+    else if (TA1CCR2 <= 800)   //1 ms
     {
-        servoMotor->direction = 1;
+        servoMotor->direction = 20;
         P2OUT &= ~RGB_WHITE;
         P2OUT |= RGB_GREEN;
     }

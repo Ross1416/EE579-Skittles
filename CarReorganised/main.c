@@ -58,13 +58,18 @@ struct flags {
     char motorSteer;
 
     //To read ultrasonic when result available
-    char ultrasonicRead;
+    char ultraWallRead;
+    char ultraRADARRead;
 };
 
 //Structure contains all timings that events occur on
 struct Scheduler {
     //Time at which debouncing finishes
     struct Time debounce;
+
+    //Time to start an ultrasonic reading
+    struct Time ultraWallStart;
+	struct Time ultraRADARStart;
 
     //Time at which car state should change
     struct Time stateChange;
@@ -108,7 +113,7 @@ void    alignToWall();
 
 // Important Ultrasonic Info
 #define SOUND_SPEED 343
-#define CLOCK_USED_ULTRASONIC   ACLK_FREQ
+#define CLOCK_USED_ULTRASONIC   SMCK_FREQ
 #define dist2pulse(d)           ((CLOCK_USED_ULTRASONIC/100)*d*2/SOUND_SPEED)     // Converts a distance (cm) to ultrasonic sensor output pulse length
 
 //Scheduler information
@@ -123,7 +128,7 @@ void    alignToWall();
 #define STOP        2
 
 //Wall alignment
-#define WALLREADINGS  	3	//Number of wall readings
+#define WALLREADINGS  	2	//Number of wall readings
 #define STRAIGHT    	0
 #define AWAY        	1
 #define CLOSE       	2
@@ -151,19 +156,21 @@ struct flags flag           =   {0};       //Flag when something ready to be att
 char state  =   START;
 
 //Motor info (On Port 1)
-struct MotorDC motorDrive = {0, BIT4, BIT7, {0, 100, 0, 100, 1}};
-struct MotorDC motorSteer = {0, BIT5, BIT6, {0, 100, 0, 100, 1}};
+struct MotorDC motorDrive = {0, BIT4, BIT5, {0, 100, 0, 100, 1}};
+struct MotorDC motorSteer = {0, BIT1, BIT7, {0, 100, 0, 100, 1}};
 
 //Ultrasonic info (Port 2)
-struct Ultrasonic ultraWall = {0, {0, 0}, 0, BIT0, BIT2};
+struct Ultrasonic ultraLeft = {0, {0, 0}, 0, BIT0, BIT2, 2};
+struct Ultrasonic ultraRight = {0, {0, 0}, 0, BIT0, BIT1, 2};
+struct Ultrasonic ultraRADAR = {0, {0, 0}, 0, BIT0, BIT2, 1};
 
 //Servo info (Port 2)
-struct Servo servoA = {BIT4, 1};
+struct Servo servoA = {BIT4, 10};
 
 //Wall alignment
 volatile int startingDistance;			//Initial distance to maintain to wall
 int wallTolerance = dist2pulse(5);		//Distance +- correct distance from wall
-int canDetectDist = dist2pulse(20);		//Distance closer then wall
+int canDetectDist = dist2pulse(15);		//Distance closer then wall
 char turnState = STRAIGHT;				//Wall alignment turning instruction
 int  wallDistances[WALLREADINGS] = {0};	//Distance readings to wall
 char turnStateTime = 0;					//Time spent turning to correct for wall
@@ -171,6 +178,7 @@ char turnStateTime = 0;					//Time spent turning to correct for wall
 //Flags for after main flags are dealt with and then results are used for stateControl()
 char buttonPressed = 0;
 char ultraRead = 0;
+char ultraRADARRead = 0;
 //==============================================================================
 // Functions
 //------------------------------------------------------------------------------
@@ -189,19 +197,50 @@ __interrupt void Port1_ISR(void)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer0_A0_ISR(void)
 {
-    currentTime.ms += TIMER_INC_MS;
-    if(currentTime.ms >= SECOND_COUNT)    //Increment timer
+    if(TA0IV == TA0IV_NONE)
     {
-        currentTime.ms -= SECOND_COUNT;
-        if(++currentTime.sec == 60) currentTime.sec = 0;
+        currentTime.ms += TIMER_INC_MS;
+        if(currentTime.ms >= SECOND_COUNT)    //Increment timer
+        {
+            currentTime.ms -= SECOND_COUNT;
+            if(++currentTime.sec == 60) currentTime.sec = 0;
+        }
+        flag.timerA0 = 1;
+        __low_power_mode_off_on_exit();
+        TA0CCTL0 &= ~CCIFG;
     }
+    else
+    {
+        switch(TA0IV)
+        {
+            case TA0IV_TACCR1:  //TA0CCR1
+                ultraRADAR.time[ultraRADAR.timeNumber] = TA0CCR1;
+                ultraRADAR.timeNumber++;
+                if (ultraRADAR.timeNumber==2)       //After up/down edges of feedback
+                {
+                    ultraRADAR.distance = ultraRADAR.time[1]-ultraRADAR.time[0];
+                    if (ultraRADAR.distance < 0)    //When timer wrapped
+                    {
+                        ultraRADAR.distance += TA1CCR0;
+                    }
+                    flag.ultraRADARRead = 1;
+                    ultraRADAR.timeNumber=0;
+                    TA0CCTL1 |= CM_1;   //Capture on rising edge
+                }
+                else
+                {
+                    TA0CCTL1 |= CM_2;   //Capture on falling edge
+                }
+                TA0CCTL1 &= ~CCIFG;
+                break;
 
-    flag.timerA0 = 1;
-
-    __low_power_mode_off_on_exit();
-
-    TA0CCTL0 &= ~CCIFG;
+                case TA0IV_TACCR2:  //TA0CCR2
+                TA0CCTL2 &= ~CCIFG;
+                break;
+        }
+    }
 }
+
 
 //Ultrasonic capture compare
 #pragma vector=TIMER1_A1_VECTOR
@@ -209,21 +248,21 @@ __interrupt void Timer1_A1_ISR (void)
 {
     switch(TA1IV)
     {
-    case 0xA:
+    case 0xA:	//OVERFLOW
         TA1CTL &= ~TAIFG;
         break;
-    case 0x02:
-        ultraWall.time[ultraWall.timeNumber] = TA1CCR1;
-        ultraWall.timeNumber++;
-        if (ultraWall.timeNumber==2)       //After up/down edges of feedback
+    case TA1IV_TACCR1:	//TA1CCR1
+        ultraLeft.time[ultraLeft.timeNumber] = TA1CCR1;
+        ultraLeft.timeNumber++;
+        if (ultraLeft.timeNumber==2)       //After up/down edges of feedback
         {
-            ultraWall.distance = ultraWall.time[1]-ultraWall.time[0];
-            if (ultraWall.distance < 0)    //When timer wrapped
+            ultraLeft.distance = ultraLeft.time[1]-ultraLeft.time[0];
+            if (ultraLeft.distance < 0)    //When timer wrapped
             {
-                ultraWall.distance += 0xFFFF;
+                ultraLeft.distance += TA1CCR0;
             }
-            flag.ultrasonicRead = 1;
-            ultraWall.timeNumber=0;
+            flag.ultraWallRead = 1;
+            ultraLeft.timeNumber=0;
             TA1CCTL1 |= CM_1;   //Capture on rising edge
         }
         else
@@ -232,7 +271,7 @@ __interrupt void Timer1_A1_ISR (void)
         }
         TA1CCTL1 &= ~CCIFG;
         break;
-    case 0x04:
+    case TA1IV_TACCR2:	//TA1CCR2
         TA1CCTL2 &= ~CCIFG;
         break;
     }
@@ -248,8 +287,11 @@ int main(void)
     setupButton();
     motorSetup(&motorDrive);
     motorSetup(&motorSteer);
-    ultrasonicSetup(&ultraWall);
+    ultrasonicSetup(&ultraLeft);
+	ultrasonicSetup(&ultraRight);
+    ultrasonicSetup(&ultraRADAR);
 	servoSetup(&servoA);
+    //TA1CCR0 = 20000;
 	setupTimerRADAR();
     setupTimerSchedule();
 
@@ -259,6 +301,12 @@ int main(void)
 
     Schedule.stateChange.sec = 0;
     Schedule.stateChange.ms = -1;
+
+    Schedule.ultraWallStart.sec = 0;
+    Schedule.ultraWallStart.ms = -1;
+	
+	//Do an ultrasonic RADAR reading
+	timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
 
 	//Start DC motor PWM schedules but set both motors output to do nothing
     timeIncrement(&Schedule.pwmMotorDrive, motorDrive.pwm.aSec, motorDrive.pwm.aMs);
@@ -270,6 +318,12 @@ int main(void)
     motorSteer.pwm.state = 1;
     flag.motorSteer = 1;
     motorSteer.direction = 0;
+
+    //RGB to indicate things
+    P2DIR |= 0x2A;
+    P1DIR |= BIT0;
+    P2OUT &= ~0x2A;
+    P1OUT &= ~BIT0;
 
 	//Enable global interrupts
     __bis_SR_register(GIE);
@@ -304,6 +358,24 @@ void checkSchedule()
 		//Disable schedule
         Schedule.stateChange.sec = 0;
         Schedule.stateChange.ms = -1;
+    }
+
+    if (isTime(Schedule.ultraWallStart))
+    {
+        ultrasonicTrigger(&ultraLeft);
+
+        //Disable schedule
+        Schedule.ultraWallStart.sec = 0;
+        Schedule.ultraWallStart.ms = -1;
+    }
+	
+	if (isTime(Schedule.ultraRADARStart))
+    {
+        ultrasonicTrigger(&ultraRADAR);
+
+        //Disable schedule
+        Schedule.ultraRADARStart.sec = 0;
+        Schedule.ultraRADARStart.ms = -1;
     }
 	
 	//Time to check button debounce
@@ -402,20 +474,29 @@ void checkFlags()
         flag.debounce = 0;
     }
 
-	//Ultrasonic has reading ready
-    if (flag.ultrasonicRead)
+	//Wall ultrasonic has reading ready
+    if (flag.ultraWallRead)
     {
 		//Update array of wall readings
-        for(i = 1; i < WALLREADINGS; i++)
+        for(i = WALLREADINGS-1; i > 0; i--)
         {
             wallDistances[i] = wallDistances[i - 1];
         }
-        wallDistances[0] = ultraWall.distance;
+        wallDistances[0] = ultraLeft.distance;
 		
 		///Attend to in stateControl()
 		ultraRead = 1;
 		
-        flag.ultrasonicRead = 0;
+        flag.ultraWallRead = 0;
+    }
+	
+	//Wall ultrasonic has reading ready
+    if (flag.ultraRADARRead)
+    {
+		///Attend to in stateControl()
+		ultraRADARRead = 1;
+		
+        flag.ultraRADARRead = 0;
     }
 
 	//On button press start debounce
@@ -458,7 +539,7 @@ void checkFlags()
             flag.motorDrive = 1;
 
             //Initiate first ultrasonic reading
-            ultrasonicTrigger(&ultraWall);
+            ultrasonicTrigger(&ultraLeft);
         }
         else if (state == STOP)
         {
@@ -481,7 +562,8 @@ void stateControl()
 		//& schedule to next state to start moving
 		if (buttonPressed)
 		{
-			ultrasonicTrigger(&ultraWall);
+			//Trigger next reading in 20 ms
+            timeIncrement(&(Schedule.ultraWallStart), 0, 20);
 			timeIncrement(&Schedule.stateChange, 1, 0);
 			buttonPressed = 0;
 		}
@@ -505,13 +587,16 @@ void stateControl()
 			if(wallDistances[0] < startingDistance-canDetectDist)
 			{
 				flag.stateChange = 1;	//Change state to stop
+			    P2OUT &= ~0x2A;
+			    P2OUT |= RGB_CYAN;
 			}
 			
 			//Use latest reading to keep aligned to wall
 			alignToWall();
-			
-			//Trigger next reading
-			ultrasonicTrigger(&ultraWall);
+
+		    //Trigger next reading in 20 ms
+		    timeIncrement(&(Schedule.ultraWallStart), 0, 20);
+
 			ultraRead = 0;
 		}
 		
@@ -528,9 +613,30 @@ void stateControl()
 	//On stop moving state
 	if(state == STOP)
 	{
+	    //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
+	    if (buttonPressed)
+	    {
+	        state = START;
+	        buttonPressed = 0;
+	    }
+
 		//Stop all motors and readings
 		motorDrive.direction = OFF;
+		motorSteer.direction = STRAIGHT;
         flag.motorDrive = 1;
+        flag.motorSteer = 1;
+	}
+
+
+	//To occur in all states
+	if(ultraRADARRead)
+	{
+		timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
+		if (ultraRADAR.distance >= 20)
+		{
+			servoTurn(&servoA);
+		}
+		ultraRADARRead = 0;
 	}
 }
 
@@ -583,6 +689,10 @@ void setupTimerSchedule()
     TA0CCTL0 |= 0x10;                       			//Interrupt occurs when TA0R reaches TA0CCR0
     TA0CCR0 = CLOCK_USED_SCHEDULER*TIMER_INC_MS/1000; 	//Set the count to schedule time, e.g 1 MHz*5ms = 5000
     TA0CCTL0 &= ~CCIFG;                     			//Clear interrupt flags
+	
+	TA0CTL &= ~TAIFG;	//Clear interrupt
+    TA0CTL &= ~TAIE;	//Disable interrupt on timer edge
+
 }
 
 void setupTimerRADAR()
@@ -599,8 +709,8 @@ void setupTimerRADAR()
     TA1CTL &= ~TAIFG;	//Clear interrupt
     TA1CTL &= ~TAIE;	//Disable interrupt on timer edge
 
-    TA1CCTL0 &= ~(CCIFG+CCIE);	//Clear and disable timer overflow interrupt
-    TA1CCTL2 &= ~CCIE;			//Clear and disable timer2 interrupt
+    TA1CCTL0 &= ~(CCIFG+CCIE);
+    TA1CCTL2 &= ~CCIE;
     TA1CCTL2 &= ~CCIFG;
 	
 	//Count to TA1CCR0 (Defined in servo setup)
@@ -628,37 +738,37 @@ void alignToWall()
 
 
     //When state change depends on if distance is increasing
-    if (turnState == CLOSE | turnState == STRAIGHTEN)
-    {
-        //Determine if distance is increasing
-        for(i = 0; i < WALLREADINGS-1; i++)
-        {
-            if(wallDistances[i] < wallDistances[i + 1]) //Check if distance ever decreases
-            {
-                break;  //If so break out of loop
-            }
-        }
-		//If for loop went to completion
-        if (i == WALLREADINGS-1)    //Distance measured is increasing
-        {
-            switch(turnState)
-            {
-            case CLOSE:		//Was turning towards wall so needs to straighten back out
-                turnState = STRAIGHTEN;
-                break;
-            case STRAIGHTEN:	//Was straightening out but over corrected go straight and back to first if correction
-                turnState = STRAIGHT;
-                break;
-            }
-        }
-    }
+    //if (turnState == CLOSE | turnState == STRAIGHTEN)
+    //{
+    //    //Determine if distance is increasing
+    //    for(i = 0; i < WALLREADINGS-1; i++)
+    //    {
+    //        if(wallDistances[i] < wallDistances[i + 1]-5) //Check if distance ever decreases
+    //        {
+    //            break;  //If so break out of loop
+    //        }
+    //    }
+	//	//If for loop went to completion
+    //    if (i == WALLREADINGS-1)    //Distance measured is increasing
+    //    {
+    //        switch(turnState)
+    //        {
+    //        case CLOSE:		//Was turning towards wall so needs to straighten back out
+    //            turnState = STRAIGHTEN;
+    //            break;
+    //        case STRAIGHTEN:	//Was straightening out but over corrected go straight and back to first if correction
+    //            turnState = STRAIGHT;
+    //            break;
+    //        }
+    //    }
+    //}
 
     //When in same state as before
     if (turnState == turnStatePrevious)
     {
         //When in same state for long enough but not straight state, 
 		//slow down to not overshoot corrections
-        if((++turnStateTime) >= 5 && (turnState != STRAIGHT))
+        if((++turnStateTime) >= 20 && (turnState != STRAIGHT))
         {
             motorDrive.pwm.aMs = 50;    //Half driving speed
         }
