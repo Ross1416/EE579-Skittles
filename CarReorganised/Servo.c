@@ -32,14 +32,10 @@ void servoTurn(struct Servo *servoMotor)
     if (TA1CCR2 >= 2200)        //2 ms
     {
         servoMotor->direction = -20;
-        P2OUT &= ~RGB_WHITE;
-        P2OUT |= RGB_BLUE;
     }
     else if (TA1CCR2 <= 800)   //1 ms
     {
         servoMotor->direction = 20;
-        P2OUT &= ~RGB_WHITE;
-        P2OUT |= RGB_GREEN;
     }
     TA1CCR2 += servoMotor->direction;
 }

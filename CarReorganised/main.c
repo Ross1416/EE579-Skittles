@@ -16,6 +16,7 @@ Change History
 --------------------------------------------------------------------------------
 31-MAR-2024 SARK created to restructure AutonomousCar project
 01-APR-2024 SARK continued to restructure to make readable
+03-APR-2024 SARK added multiple ultrasonic sensors
 --------------------------------------------------------------------------------
 */
 
@@ -68,7 +69,8 @@ struct Scheduler {
     struct Time debounce;
 
     //Time to start an ultrasonic reading
-    struct Time ultraWallStart;
+    struct Time ultraLeftStart;
+	struct Time ultraRightStart;
 	struct Time ultraRADARStart;
 
     //Time at which car state should change
@@ -168,7 +170,8 @@ struct Ultrasonic ultraRADAR = {0, {0, 0}, 0, BIT0, BIT2, 1};
 struct Servo servoA = {BIT4, 10};
 
 //Wall alignment
-volatile int startingDistance;			//Initial distance to maintain to wall
+volatile int leftWall;			//Initial distance to maintain to left wall
+volatile int rightWall;          //Initial distance to maintain to left wall
 int wallTolerance = dist2pulse(5);		//Distance +- correct distance from wall
 int canDetectDist = dist2pulse(15);		//Distance closer then wall
 char turnState = STRAIGHT;				//Wall alignment turning instruction
@@ -197,8 +200,6 @@ __interrupt void Port1_ISR(void)
 #pragma vector=TIMER0_A0_VECTOR
 __interrupt void Timer0_A0_ISR(void)
 {
-    if(TA0IV == TA0IV_NONE)
-    {
         currentTime.ms += TIMER_INC_MS;
         if(currentTime.ms >= SECOND_COUNT)    //Increment timer
         {
@@ -208,39 +209,44 @@ __interrupt void Timer0_A0_ISR(void)
         flag.timerA0 = 1;
         __low_power_mode_off_on_exit();
         TA0CCTL0 &= ~CCIFG;
-    }
-    else
-    {
-        switch(TA0IV)
-        {
-            case TA0IV_TACCR1:  //TA0CCR1
-                ultraRADAR.time[ultraRADAR.timeNumber] = TA0CCR1;
-                ultraRADAR.timeNumber++;
-                if (ultraRADAR.timeNumber==2)       //After up/down edges of feedback
-                {
-                    ultraRADAR.distance = ultraRADAR.time[1]-ultraRADAR.time[0];
-                    if (ultraRADAR.distance < 0)    //When timer wrapped
-                    {
-                        ultraRADAR.distance += TA1CCR0;
-                    }
-                    flag.ultraRADARRead = 1;
-                    ultraRADAR.timeNumber=0;
-                    TA0CCTL1 |= CM_1;   //Capture on rising edge
-                }
-                else
-                {
-                    TA0CCTL1 |= CM_2;   //Capture on falling edge
-                }
-                TA0CCTL1 &= ~CCIFG;
-                break;
-
-                case TA0IV_TACCR2:  //TA0CCR2
-                TA0CCTL2 &= ~CCIFG;
-                break;
-        }
-    }
 }
 
+#pragma vector=TIMER0_A1_VECTOR
+__interrupt void Timer0_A1_ISR(void)
+{
+    switch(TA0IV)
+    {
+        case TA0IV_TACCR1:  //TA0CCR1
+            P2OUT &= ~RGB_WHITE;
+            P2OUT|= RGB_YELLOW;
+            P2OUT &= ~RGB_WHITE;
+            ultraRADAR.time[ultraRADAR.timeNumber] = TA0CCR1;
+            ultraRADAR.timeNumber++;
+            if (ultraRADAR.timeNumber==2)       //After up/down edges of feedback
+            {
+                ultraRADAR.distance = ultraRADAR.time[1]-ultraRADAR.time[0];
+                if (ultraRADAR.distance < 0)    //When timer wrapped
+                {
+                    ultraRADAR.distance += TA1CCR0;
+                }
+                flag.ultraRADARRead = 1;
+                ultraRADAR.timeNumber=0;
+                TA0CCTL1 |= CM_1;   //Capture on rising edge
+            }
+            else
+            {
+                TA0CCTL1 |= CM_2;   //Capture on falling edge
+            }
+            TA0CCTL1 &= ~CCIFG;
+            break;
+
+        case TA0IV_TACCR2:  //TA0CCR2
+            TA0CCTL2 &= ~CCIFG;
+            break;
+
+        case 0xA:   break;
+    }
+}
 
 //Ultrasonic capture compare
 #pragma vector=TIMER1_A1_VECTOR
@@ -251,27 +257,56 @@ __interrupt void Timer1_A1_ISR (void)
     case 0xA:	//OVERFLOW
         TA1CTL &= ~TAIFG;
         break;
-    case TA1IV_TACCR1:	//TA1CCR1
-        ultraLeft.time[ultraLeft.timeNumber] = TA1CCR1;
-        ultraLeft.timeNumber++;
-        if (ultraLeft.timeNumber==2)       //After up/down edges of feedback
+    case TA1IV_TACCR1:	//TA1CCR1 (Wall Ultrasonic)
+        if(TA1CCTL1 & CCIS_1)
         {
-            ultraLeft.distance = ultraLeft.time[1]-ultraLeft.time[0];
-            if (ultraLeft.distance < 0)    //When timer wrapped
+            P2OUT &= ~RGB_WHITE;
+            P2OUT|= RGB_GREEN;
+            ultraLeft.time[ultraLeft.timeNumber] = TA1CCR1;
+            ultraLeft.timeNumber++;
+            if (ultraLeft.timeNumber==2)       //After up/down edges of feedback
             {
-                ultraLeft.distance += TA1CCR0;
+                ultraLeft.distance = ultraLeft.time[1]-ultraLeft.time[0];
+                if (ultraLeft.distance < 0)    //When timer wrapped
+                {
+                    ultraLeft.distance += TA1CCR0;
+                }
+                flag.ultraWallRead = 1;
+                ultraLeft.timeNumber=0;
+                TA1CCTL1 |= CM_1;   //Capture on rising edge
             }
-            flag.ultraWallRead = 1;
-            ultraLeft.timeNumber=0;
-            TA1CCTL1 |= CM_1;   //Capture on rising edge
+            else
+            {
+                TA1CCTL1 |= CM_2;   //Capture on falling edge
+            }
+            TA1CCTL1 &= ~CCIFG;
         }
         else
         {
-            TA1CCTL1 |= CM_2;   //Capture on falling edge
+            P2OUT &= ~RGB_WHITE;
+            P2OUT|= RGB_BLUE;
+            ultraRight.time[ultraRight.timeNumber] = TA1CCR1;
+            ultraRight.timeNumber++;
+            if (ultraRight.timeNumber==2)       //After up/down edges of feedback
+            {
+                ultraRight.distance = ultraRight.time[1]-ultraRight.time[0];
+                if (ultraRight.distance < 0)    //When timer wrapped
+                {
+                    ultraRight.distance += TA1CCR0;
+                }
+                flag.ultraWallRead = 1;
+                ultraRight.timeNumber=0;
+                TA1CCTL1 |= CM_1;   //Capture on rising edge
+            }
+            else
+            {
+                TA1CCTL1 |= CM_2;   //Capture on falling edge
+            }
+            TA1CCTL1 &= ~CCIFG;
         }
-        TA1CCTL1 &= ~CCIFG;
         break;
-    case TA1IV_TACCR2:	//TA1CCR2
+		
+    case TA1IV_TACCR2:	//TA1CCR2 (No interrupt as used in servo PWM)
         TA1CCTL2 &= ~CCIFG;
         break;
     }
@@ -281,6 +316,7 @@ __interrupt void Timer1_A1_ISR (void)
 int main(void)
 {
     //Stop watchdog timer
+
     WDTCTL = WDTPW | WDTHOLD;
 
     //Setup device
@@ -291,9 +327,11 @@ int main(void)
 	ultrasonicSetup(&ultraRight);
     ultrasonicSetup(&ultraRADAR);
 	servoSetup(&servoA);
-    //TA1CCR0 = 20000;
 	setupTimerRADAR();
     setupTimerSchedule();
+
+    //TA0CCTL1 = TA1CCTL1;
+    //TA0CCTL1 |= CM_3 +SCCI;
 
     //Disable schedules
     Schedule.debounce.sec = 0;
@@ -302,8 +340,11 @@ int main(void)
     Schedule.stateChange.sec = 0;
     Schedule.stateChange.ms = -1;
 
-    Schedule.ultraWallStart.sec = 0;
-    Schedule.ultraWallStart.ms = -1;
+	Schedule.ultraLeftStart.sec = 0;
+    Schedule.ultraLeftStart.ms = -1;
+		
+	Schedule.ultraRightStart.sec = 0;
+    Schedule.ultraRightStart.ms = -1;
 	
 	//Do an ultrasonic RADAR reading
 	timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
@@ -323,7 +364,7 @@ int main(void)
     P2DIR |= 0x2A;
     P1DIR |= BIT0;
     P2OUT &= ~0x2A;
-    P1OUT &= ~BIT0;
+    P1OUT &= ~(BIT0+BIT2);
 
 	//Enable global interrupts
     __bis_SR_register(GIE);
@@ -360,13 +401,22 @@ void checkSchedule()
         Schedule.stateChange.ms = -1;
     }
 
-    if (isTime(Schedule.ultraWallStart))
+    if (isTime(Schedule.ultraLeftStart))
     {
         ultrasonicTrigger(&ultraLeft);
 
         //Disable schedule
-        Schedule.ultraWallStart.sec = 0;
-        Schedule.ultraWallStart.ms = -1;
+        Schedule.ultraLeftStart.sec = 0;
+        Schedule.ultraLeftStart.ms = -1;
+    }
+	
+    if (isTime(Schedule.ultraRightStart))
+    {
+        ultrasonicTrigger(&ultraRight);
+
+        //Disable schedule
+        Schedule.ultraRightStart.sec = 0;
+        Schedule.ultraRightStart.ms = -1;
     }
 	
 	if (isTime(Schedule.ultraRADARStart))
@@ -374,8 +424,9 @@ void checkSchedule()
         ultrasonicTrigger(&ultraRADAR);
 
         //Disable schedule
-        Schedule.ultraRADARStart.sec = 0;
-        Schedule.ultraRADARStart.ms = -1;
+        //Schedule.ultraRADARStart.sec = 0;
+        //Schedule.ultraRADARStart.ms = -1;
+        timeIncrement(&(Schedule.ultraRADARStart), 0, 500);
     }
 	
 	//Time to check button debounce
@@ -563,7 +614,8 @@ void stateControl()
 		if (buttonPressed)
 		{
 			//Trigger next reading in 20 ms
-            timeIncrement(&(Schedule.ultraWallStart), 0, 20);
+            timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
+            timeIncrement(&(Schedule.ultraRightStart), 0, 200);
 			timeIncrement(&Schedule.stateChange, 1, 0);
 			buttonPressed = 0;
 		}
@@ -571,7 +623,14 @@ void stateControl()
 		//Use initial ultrasonic reading as distance to wall to maintain
 		if (ultraRead)
 		{
-			startingDistance = wallDistances[0];
+		    if(TA1CCTL1 & CCIS_1)
+		    {
+		        leftWall = wallDistances[0];
+		    }
+		    else
+		    {
+		        rightWall = wallDistances[0];
+		    }
 			ultraRead = 0;
 		}
 	}
@@ -584,7 +643,7 @@ void stateControl()
 		if (ultraRead)
 		{
 			//When reading is suddenly closer can detected so change state
-			if(wallDistances[0] < startingDistance-canDetectDist)
+			if(wallDistances[0] < leftWall-canDetectDist)
 			{
 				flag.stateChange = 1;	//Change state to stop
 			    P2OUT &= ~0x2A;
@@ -595,7 +654,7 @@ void stateControl()
 			alignToWall();
 
 		    //Trigger next reading in 20 ms
-		    timeIncrement(&(Schedule.ultraWallStart), 0, 20);
+		    timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
 
 			ultraRead = 0;
 		}
@@ -631,8 +690,8 @@ void stateControl()
 	//To occur in all states
 	if(ultraRADARRead)
 	{
-		timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
-		if (ultraRADAR.distance >= 20)
+		timeIncrement(&(Schedule.ultraRADARStart), 0, 100);
+		if (ultraRADAR.distance >= 15)
 		{
 			servoTurn(&servoA);
 		}
@@ -692,7 +751,6 @@ void setupTimerSchedule()
 	
 	TA0CTL &= ~TAIFG;	//Clear interrupt
     TA0CTL &= ~TAIE;	//Disable interrupt on timer edge
-
 }
 
 void setupTimerRADAR()
@@ -723,11 +781,11 @@ void alignToWall()
     char i = 0;
 
     //When state change is based on measured distance to wall
-    if(wallDistances[0] < startingDistance-wallTolerance)       //When drifted closer to wall
+    if(wallDistances[0] < leftWall-wallTolerance)       //When drifted closer to wall
     {
         turnState = AWAY;
     }
-    else if(wallDistances[0] > startingDistance+wallTolerance)  //When drifted further from wall
+    else if(wallDistances[0] > leftWall+wallTolerance)  //When drifted further from wall
     {
         turnState = CLOSE;
     }
