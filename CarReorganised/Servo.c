@@ -27,17 +27,27 @@ void servoSetup(struct Servo *servoMotor)
     P2SEL |= servoMotor->pwmPin;
 }
 
-void servoTurn(struct Servo *servoMotor)
+void servoTurn(struct Servo *servoMotor, char direction)
 {
-    if (TA1CCR2 >= 2200)        //2 ms
+    //Rotate
+    if (direction == 1)     //Turn clockwise
     {
-        servoMotor->direction = -20;
+        TA1CCR2 += servoMotor->speed;
     }
-    else if (TA1CCR2 <= 800)   //1 ms
+    else    //Turn anticlockwise
     {
-        servoMotor->direction = 20;
+        TA1CCR2 -= servoMotor->speed;
     }
-    TA1CCR2 += servoMotor->direction;
+
+    //If breaching limits keep to limits.
+    if (TA1CCR2 > PWM_SERVO_UPPER)
+    {
+        TA1CCR2 = PWM_SERVO_UPPER;
+    }
+    else if (TA1CCR2 < PWM_SERVO_LOWER)
+    {
+        TA1CCR2 = PWM_SERVO_LOWER;
+    }
 }
 //==============================================================================
 // End of File :  CarReorganised/Servo.h

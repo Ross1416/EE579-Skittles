@@ -70,7 +70,7 @@ struct Scheduler {
 
     //Time to start an ultrasonic reading
     struct Time ultraLeftStart;
-	struct Time ultraRightStart;
+	//struct Time ultraRightStart;
 	struct Time ultraRADARStart;
 
     //Time at which car state should change
@@ -146,6 +146,12 @@ void    alignToWall();
 #define RGB_YELLOW  0xA
 #define RGB_WHITE   0x2A
 
+//Drive Speeds
+#define TOTAL_PWM_DC_MOTORS    100
+#define SPEED_TOP     1*TOTAL_PWM_DC_MOTORS
+#define SPEED_SLOW    0.5*TOTAL_PWM_DC_MOTORS
+
+
 //==============================================================================
 // Global Variable Initialisation
 //------------------------------------------------------------------------------
@@ -158,20 +164,21 @@ struct flags flag           =   {0};       //Flag when something ready to be att
 char state  =   START;
 
 //Motor info (On Port 1)
-struct MotorDC motorDrive = {0, BIT4, BIT5, {0, 100, 0, 100, 1}};
-struct MotorDC motorSteer = {0, BIT1, BIT7, {0, 100, 0, 100, 1}};
+struct MotorDC motorDrive = {0, BIT5, BIT4, {0, TOTAL_PWM_DC_MOTORS, 0, SPEED_TOP, 1}};
+struct MotorDC motorSteer = {0, BIT6, BIT7, {0, TOTAL_PWM_DC_MOTORS, 0, TOTAL_PWM_DC_MOTORS, 1}};
 
 //Ultrasonic info (Port 2)
 struct Ultrasonic ultraLeft = {0, {0, 0}, 0, BIT0, BIT2, 2};
-struct Ultrasonic ultraRight = {0, {0, 0}, 0, BIT0, BIT1, 2};
+//struct Ultrasonic ultraRight = {0, {0, 0}, 0, BIT0, BIT1, 2};
 struct Ultrasonic ultraRADAR = {0, {0, 0}, 0, BIT0, BIT2, 1};
 
 //Servo info (Port 2)
-struct Servo servoA = {BIT4, 10};
+struct Servo servoA = {BIT4, 50};
+char RADARDirection = 0;
 
 //Wall alignment
 volatile int leftWall;			//Initial distance to maintain to left wall
-volatile int rightWall;          //Initial distance to maintain to left wall
+//volatile int rightWall;          //Initial distance to maintain to left wall
 int wallTolerance = dist2pulse(5);		//Distance +- correct distance from wall
 int canDetectDist = dist2pulse(15);		//Distance closer then wall
 char turnState = STRAIGHT;				//Wall alignment turning instruction
@@ -217,9 +224,8 @@ __interrupt void Timer0_A1_ISR(void)
     switch(TA0IV)
     {
         case TA0IV_TACCR1:  //TA0CCR1
-            P2OUT &= ~RGB_WHITE;
+            P2OUT &= ~0x2A;
             P2OUT|= RGB_YELLOW;
-            P2OUT &= ~RGB_WHITE;
             ultraRADAR.time[ultraRADAR.timeNumber] = TA0CCR1;
             ultraRADAR.timeNumber++;
             if (ultraRADAR.timeNumber==2)       //After up/down edges of feedback
@@ -227,7 +233,7 @@ __interrupt void Timer0_A1_ISR(void)
                 ultraRADAR.distance = ultraRADAR.time[1]-ultraRADAR.time[0];
                 if (ultraRADAR.distance < 0)    //When timer wrapped
                 {
-                    ultraRADAR.distance += TA1CCR0;
+                    ultraRADAR.distance += TA0CCR0;
                 }
                 flag.ultraRADARRead = 1;
                 ultraRADAR.timeNumber=0;
@@ -281,29 +287,29 @@ __interrupt void Timer1_A1_ISR (void)
             }
             TA1CCTL1 &= ~CCIFG;
         }
-        else
-        {
-            P2OUT &= ~RGB_WHITE;
-            P2OUT|= RGB_BLUE;
-            ultraRight.time[ultraRight.timeNumber] = TA1CCR1;
-            ultraRight.timeNumber++;
-            if (ultraRight.timeNumber==2)       //After up/down edges of feedback
-            {
-                ultraRight.distance = ultraRight.time[1]-ultraRight.time[0];
-                if (ultraRight.distance < 0)    //When timer wrapped
-                {
-                    ultraRight.distance += TA1CCR0;
-                }
-                flag.ultraWallRead = 1;
-                ultraRight.timeNumber=0;
-                TA1CCTL1 |= CM_1;   //Capture on rising edge
-            }
-            else
-            {
-                TA1CCTL1 |= CM_2;   //Capture on falling edge
-            }
-            TA1CCTL1 &= ~CCIFG;
-        }
+        //else
+        //{
+        //    P2OUT &= ~RGB_WHITE;
+        //    P2OUT|= RGB_BLUE;
+        //    ultraRight.time[ultraRight.timeNumber] = TA1CCR1;
+        //    ultraRight.timeNumber++;
+        //    if (ultraRight.timeNumber==2)       //After up/down edges of feedback
+        //    {
+        //        ultraRight.distance = ultraRight.time[1]-ultraRight.time[0];
+        //        if (ultraRight.distance < 0)    //When timer wrapped
+        //        {
+        //            ultraRight.distance += TA1CCR0;
+        //        }
+        //        flag.ultraWallRead = 1;
+        //        ultraRight.timeNumber=0;
+        //        TA1CCTL1 |= CM_1;   //Capture on rising edge
+        //    }
+        //    else
+        //    {
+        //        TA1CCTL1 |= CM_2;   //Capture on falling edge
+        //    }
+        //    TA1CCTL1 &= ~CCIFG;
+        //}
         break;
 		
     case TA1IV_TACCR2:	//TA1CCR2 (No interrupt as used in servo PWM)
@@ -324,7 +330,7 @@ int main(void)
     motorSetup(&motorDrive);
     motorSetup(&motorSteer);
     ultrasonicSetup(&ultraLeft);
-	ultrasonicSetup(&ultraRight);
+	//ultrasonicSetup(&ultraRight);
     ultrasonicSetup(&ultraRADAR);
 	servoSetup(&servoA);
 	setupTimerRADAR();
@@ -343,8 +349,8 @@ int main(void)
 	Schedule.ultraLeftStart.sec = 0;
     Schedule.ultraLeftStart.ms = -1;
 		
-	Schedule.ultraRightStart.sec = 0;
-    Schedule.ultraRightStart.ms = -1;
+	//Schedule.ultraRightStart.sec = 0;
+    //Schedule.ultraRightStart.ms = -1;
 	
 	//Do an ultrasonic RADAR reading
 	timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
@@ -410,23 +416,22 @@ void checkSchedule()
         Schedule.ultraLeftStart.ms = -1;
     }
 	
-    if (isTime(Schedule.ultraRightStart))
-    {
-        ultrasonicTrigger(&ultraRight);
-
-        //Disable schedule
-        Schedule.ultraRightStart.sec = 0;
-        Schedule.ultraRightStart.ms = -1;
-    }
+    //if (isTime(Schedule.ultraRightStart))
+    //{
+    //    //ultrasonicTrigger(&ultraRight);
+	//
+    //    //Disable schedule
+    //    Schedule.ultraRightStart.sec = 0;
+    //    Schedule.ultraRightStart.ms = -1;
+    //}
 	
 	if (isTime(Schedule.ultraRADARStart))
     {
         ultrasonicTrigger(&ultraRADAR);
-
+        //P2OUT &= ~RGB_WHITE;
         //Disable schedule
-        //Schedule.ultraRADARStart.sec = 0;
-        //Schedule.ultraRADARStart.ms = -1;
-        timeIncrement(&(Schedule.ultraRADARStart), 0, 500);
+        Schedule.ultraRADARStart.sec = 0;
+        Schedule.ultraRADARStart.ms = -1;
     }
 	
 	//Time to check button debounce
@@ -614,8 +619,10 @@ void stateControl()
 		if (buttonPressed)
 		{
 			//Trigger next reading in 20 ms
+		    //TA1CCTL1 &= ~CCIS_3;
+		    //TA1CCTL1 |= CCIS_0;
             timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
-            timeIncrement(&(Schedule.ultraRightStart), 0, 200);
+            //timeIncrement(&(Schedule.ultraRightStart), 0, 200);
 			timeIncrement(&Schedule.stateChange, 1, 0);
 			buttonPressed = 0;
 		}
@@ -627,10 +634,10 @@ void stateControl()
 		    {
 		        leftWall = wallDistances[0];
 		    }
-		    else
-		    {
-		        rightWall = wallDistances[0];
-		    }
+		    //else
+		    //{
+		    //    rightWall = wallDistances[0];
+		    //}
 			ultraRead = 0;
 		}
 	}
@@ -638,6 +645,7 @@ void stateControl()
 	//On follow wall and detect can state
 	if(state == GO)
 	{
+	    P2OUT |= RGB_BLUE;
 		//Drive forward at start (Done in state change)
 		//Continuously take ultrasonic readings to wall (Started in state change)
 		if (ultraRead)
@@ -690,11 +698,19 @@ void stateControl()
 	//To occur in all states
 	if(ultraRADARRead)
 	{
-		timeIncrement(&(Schedule.ultraRADARStart), 0, 100);
-		if (ultraRADAR.distance >= 15)
+		if (ultraRADAR.distance >= 550)
 		{
-			servoTurn(&servoA);
+		    if (TA1CCR2 >= PWM_SERVO_UPPER)
+		    {
+		        RADARDirection = 0; //Anti-clockwise
+		    }
+		    else if (TA1CCR2 <= PWM_SERVO_LOWER)
+		    {
+		        RADARDirection = 1; //Clockwise
+		    }
+			servoTurn(&servoA, RADARDirection);
 		}
+		timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
 		ultraRADARRead = 0;
 	}
 }
@@ -828,17 +844,17 @@ void alignToWall()
 		//slow down to not overshoot corrections
         if((++turnStateTime) >= 20 && (turnState != STRAIGHT))
         {
-            motorDrive.pwm.aMs = 50;    //Half driving speed
+            motorDrive.pwm.aMs = SPEED_SLOW;    //Half driving speed
         }
         else
         {
-            motorDrive.pwm.aMs = 100;   //Full speed
+            motorDrive.pwm.aMs = SPEED_TOP;   //Full speed
         }
     }
     else    //When state has changed
     {
         turnStateTime = 0;  //Changed state so reset timer
-        motorDrive.pwm.aMs = 100;   //Full speed
+        motorDrive.pwm.aMs = SPEED_TOP;   //Full speed
 
 		//Control steering according to new state
         switch(turnState)

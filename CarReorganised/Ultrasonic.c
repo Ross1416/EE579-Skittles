@@ -25,9 +25,9 @@ void ultrasonicSetup(struct Ultrasonic *ultra)
 		P1OUT &= ~ultra->trigPin;
 
 		//Set capture compare to the ultrasonic being used
-		if (ultra->echoPin == BIT6) //Capture compare input A
+		if (ultra->echoPin == BIT2) //Capture compare input A
 		{
-			TA0CCTL1 |= CCIS_1;
+			TA0CCTL1 |= CCIS_0;
 		}
 		//Capture rising, capture mode, enable interrupt, sync to clock rising edge
 		TA0CCTL1 |= CM_1 + CAP + CCIE + SCS;
@@ -46,12 +46,15 @@ void ultrasonicSetup(struct Ultrasonic *ultra)
 		//Timer A1 settings
 		if (ultra->echoPin == BIT2) //Capture compare input B
 		{
+		    TA1CCTL1 &= ~CCIS_3;
 			TA1CCTL1 |= CCIS_1;
 		}
 		else if (ultra->echoPin == BIT1) //Capture compare input A
 		{
+		    TA1CCTL1 &= ~CCIS_3;
 			TA1CCTL1 |= CCIS_0;
 		}
+
 		//Capture rising, capture mode, enable interrupt, sync to clock rising edge
 		TA1CCTL1 |= CM_1 + CAP + CCIE + SCS;
 		TA1CCTL1 &= ~(CCIFG+SCCI+CCI);  //Clear interrupts
@@ -65,7 +68,7 @@ void ultrasonicTrigger(struct Ultrasonic *ultra)
 		//Set capture compare to the ultrasonic being used
 		if (ultra->echoPin == BIT2) //Capture compare input A
 		{
-			TA0CCTL1 |= CCIS_1;
+			TA0CCTL1 |= CCIS_0;
 		}
 
 		//Trigger the ultrasonic
@@ -77,16 +80,16 @@ void ultrasonicTrigger(struct Ultrasonic *ultra)
 	if (ultra->port == 2)
 	{
 		//Set capture compare to the ultrasonic being used
-		if (ultra->echoPin == BIT2) //Capture compare input B
-		{
-		    //TA1CCTL1 &= ~CCIS_3;
-			TA1CCTL1 |= CCIS_1;
-		}
-		else if (ultra->echoPin == BIT1) //Capture compare input A
-		{
-		    TA1CCTL1 &= ~CCIS_3;
-			TA1CCTL1 |= CCIS_0;
-		}
+		//if (ultra->echoPin == BIT2) //Capture compare input B
+		//{
+		  // TA1CCTL1 &= ~CCIS_3;
+			//TA1CCTL1 |= CCIS_1;
+		//}
+		//else if (ultra->echoPin == BIT1) //Capture compare input A
+		//{
+		//    TA1CCTL1 &= ~CCIS_3;
+		//	TA1CCTL1 |= CCIS_0;
+		//}
 
 		//Trigger the ultrasonic
 		P2OUT |= ultra->trigPin;

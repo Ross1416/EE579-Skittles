@@ -18,21 +18,16 @@ Change History
 //Define variable containing servo motor information
 struct Servo{
     char pwmPin;
-    int direction;
+    unsigned int speed;
 };
 
 extern void    servoSetup(struct Servo *servoMotor);
-extern void    servoTurn(struct Servo *servoMotor);
+extern void    servoTurn(struct Servo *servoMotor, char direction);
 
-//RGB colours (P2OUT |= RGB_XX;)
-#define RGB_RED     0x02
-#define RGB_GREEN   0x08
-#define RGB_BLUE    0x20
-#define RGB_PURPLE  0x22
-#define RGB_CYAN    0x28
-#define RGB_YELLOW  0xA
-#define RGB_WHITE   0x2A
-//RGB off command: (P2OUT &= ~0x2A;)
+//SERVO PWM LIMITS
+#define PWM_SERVO_UPPER   2200
+#define PWM_SERVO_LOWER   800
+
 
 #endif // SERVO_H
 //==============================================================================
