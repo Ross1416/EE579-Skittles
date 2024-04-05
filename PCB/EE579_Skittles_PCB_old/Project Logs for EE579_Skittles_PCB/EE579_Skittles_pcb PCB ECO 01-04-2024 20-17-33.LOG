@@ -1,0 +1,9 @@
+Change Component Designator: OldDesignator=J? NewDesignator=J7
+Change Component Designator: OldDesignator=J? NewDesignator=J8
+Change Component Designator: OldDesignator=J? NewDesignator=J11
+Change Net Name : Old Net Name=NetJ9_1 New Net Name=NetJ8_2
+Change Net Name : Old Net Name=NetJ9_2 New Net Name=NetJ8_3
+Change Net Name : Old Net Name=NetJ10_1 New Net Name=NetJ8_4
+Change Net Name : Old Net Name=NetJ10_2 New Net Name=NetJ8_5
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J7 801-87-003-10-001101
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J11 61300611821

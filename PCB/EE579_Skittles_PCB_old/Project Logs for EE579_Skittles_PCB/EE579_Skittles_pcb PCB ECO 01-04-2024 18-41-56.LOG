@@ -1,0 +1,49 @@
+Change Component Designator: OldDesignator=C? NewDesignator=C1
+Change Component Designator: OldDesignator=C? NewDesignator=C2
+Change Component Designator: OldDesignator=C? NewDesignator=C3
+Change Component Designator: OldDesignator=J? NewDesignator=J1
+Change Component Designator: OldDesignator=J? NewDesignator=J2
+Change Component Designator: OldDesignator=J? NewDesignator=J3
+Change Component Designator: OldDesignator=J? NewDesignator=J4
+Change Component Designator: OldDesignator=J? NewDesignator=J5
+Change Component Designator: OldDesignator=J? NewDesignator=J6
+Change Component Designator: OldDesignator=J? NewDesignator=J9
+Change Component Designator: OldDesignator=J? NewDesignator=J10
+Change Component Designator: OldDesignator=R? NewDesignator=R1
+Change Component Designator: OldDesignator=R? NewDesignator=R2
+Change Component Designator: OldDesignator=R? NewDesignator=R3
+Change Component Designator: OldDesignator=R? NewDesignator=R4
+Change Component Designator: OldDesignator=R? NewDesignator=R5
+Change Component Designator: OldDesignator=R? NewDesignator=R6
+Add Component: Footprint Not Found RHDR6W97P0X254_1X6_1574X250X865P
+Add Component: Footprint Not Found RHDR6W97P0X254_1X6_1574X250X865P
+Change Net Name : Old Net Name=NetJ?_3 New Net Name=NetJ3_3
+Change Net Name : Old Net Name=NetR?_1 New Net Name=NetR2_1
+Added Pin To Net: NetName=NetJ1_3 Pin=J1-3
+Added Pin To Net: NetName=NetJ1_3 Pin=R1-2
+Added Net: Name=NetJ1_3
+Added Pin To Net: NetName=NetJ2_3 Pin=J2-3
+Added Pin To Net: NetName=NetJ2_3 Pin=R2-2
+Added Net: Name=NetJ2_3
+Added Pin To Net: NetName=NetR1_1 Pin=R1-1
+Added Pin To Net: NetName=NetR1_1 Pin=R4-2
+Added Net: Name=NetR1_1
+Added Pin To Net: NetName=NetR3_1 Pin=R3-1
+Added Pin To Net: NetName=NetR3_1 Pin=R6-2
+Added Net: Name=NetR3_1
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component C2 CL21B105KPFNNNE
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component C3 CC0805KPX7R9BB104
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J1 Ultra_A
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J2 Ultra_B
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J3 Ultra_C
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J4 B2B-PH-K-S_LF__SN_
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J5 MSP430G2553 IC Socket
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J6 B3B-XH-A__LF__SN_
+Add Class Member: Failed to add class member : Component J7 61300611821
+Add Class Member: Failed to add class member : Component J8 61300611821
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J9 B2B-PH-K-S_LF__SN_
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R1 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R2 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R3 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R5 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R6 ERJ-PB6B3002V
