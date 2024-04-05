@@ -1,10 +1,10 @@
 ******************************************************************************
                   MSP430 Linker PC v21.6.1                     
 ******************************************************************************
->> Linked Fri Apr  5 14:15:16 2024
+>> Linked Fri Apr  5 21:02:03 2024
 
 OUTPUT FILE NAME:   <CarReorganised.out>
-ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 0000c8b0
+ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 0000c8f8
 
 
 MEMORY CONFIGURATION
@@ -14,12 +14,12 @@ MEMORY CONFIGURATION
   SFR                   00000000   00000010  00000000  00000010  RWIX
   PERIPHERALS_8BIT      00000010   000000f0  00000000  000000f0  RWIX
   PERIPHERALS_16BIT     00000100   00000100  00000000  00000100  RWIX
-  RAM                   00000200   00000200  000000be  00000142  RWIX
+  RAM                   00000200   00000200  000000ba  00000146  RWIX
   INFOD                 00001000   00000040  00000000  00000040  RWIX
   INFOC                 00001040   00000040  00000000  00000040  RWIX
   INFOB                 00001080   00000040  00000000  00000040  RWIX
   INFOA                 000010c0   00000040  00000000  00000040  RWIX
-  FLASH                 0000c000   00003fde  000009a2  0000363c  RWIX
+  FLASH                 0000c000   00003fde  000009e6  000035f8  RWIX
   BSLSIGNATURE          0000ffde   00000002  00000002  00000000  RWIX  ffff 
   INT00                 0000ffe0   00000002  00000002  00000000  RWIX
   INT01                 0000ffe2   00000002  00000000  00000002  RWIX
@@ -44,66 +44,65 @@ SECTION ALLOCATION MAP
  output                                  attributes/
 section   page    origin      length       input sections
 --------  ----  ----------  ----------   ----------------
-.data      0    00000200    0000006c     UNINITIALIZED
+.data      0    00000200    00000068     UNINITIALIZED
                   00000200    00000018     main.obj (.data:Schedule)
                   00000218    00000010     main.obj (.data:motorDrive)
                   00000228    00000010     main.obj (.data:motorSteer)
-                  00000238    0000000b     main.obj (.data)
-                  00000243    00000001     --HOLE--
-                  00000244    0000000a     main.obj (.data:ultraLeft)
-                  0000024e    0000000a     main.obj (.data:ultraRADAR)
-                  00000258    00000008     main.obj (.data:flag)
+                  00000238    0000000a     main.obj (.data:ultraLeft)
+                  00000242    0000000a     main.obj (.data:ultraRADAR)
+                  0000024c    00000008     main.obj (.data:flag)
+                  00000254    00000006     main.obj (.data)
+                  0000025a    00000006     main.obj (.data:servoA)
                   00000260    00000004     main.obj (.data:currentTime)
-                  00000264    00000004     main.obj (.data:servoA)
-                  00000268    00000004     main.obj (.data:wallDistances)
+                  00000264    00000004     main.obj (.data:wallDistances)
 
-.bss       0    0000026c    00000002     UNINITIALIZED
-                  0000026c    00000002     (.common:leftWall)
+.bss       0    00000268    00000002     UNINITIALIZED
+                  00000268    00000002     (.common:leftWall)
 
 .stack     0    000003b0    00000050     UNINITIALIZED
                   000003b0    00000002     rts430_eabi.lib : boot.c.obj (.stack)
                   000003b2    0000004e     --HOLE--
 
-.text      0    0000c000    00000960     
+.text      0    0000c000    000009a8     
                   0000c000    0000012e     main.obj (.text:checkSchedule)
-                  0000c12e    00000102     main.obj (.text:stateControl)
-                  0000c230    000000d4     main.obj (.text:checkFlags)
-                  0000c304    000000ca     main.obj (.text:main)
-                  0000c3ce    00000092     main.obj (.text:alignToWall)
-                  0000c460    00000082     Ultrasonic.obj (.text:ultrasonicSetup)
-                  0000c4e2    00000080     main.obj (.text:Timer1_A1_ISR)
-                  0000c562    0000007c     rts430_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
-                  0000c5de    0000006e     main.obj (.text:Timer0_A1_ISR)
-                  0000c64c    0000004c     DCMotor.obj (.text:motorOutput)
-                  0000c698    0000004c     rts430_eabi.lib : lsr16.asm.obj (.text)
-                  0000c6e4    0000004a     Ultrasonic.obj (.text:ultrasonicTrigger)
-                  0000c72e    00000048     main.obj (.text:timeIncrement)
-                  0000c776    00000042     rts430_eabi.lib : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit:__TI_auto_init_nobinit_nopinit)
-                  0000c7b8    00000032     main.obj (.text:Timer0_A0_ISR)
-                  0000c7ea    00000032     Servo.obj (.text:servoTurn)
-                  0000c81c    0000002c     rts430_eabi.lib : lsl16.asm.obj (.text)
-                  0000c848    00000026     main.obj (.text:setupTimerRADAR)
-                  0000c86e    00000022     Servo.obj (.text:servoSetup)
-                  0000c890    00000020     main.obj (.text:setupTimerSchedule)
-                  0000c8b0    0000001c     rts430_eabi.lib : boot.c.obj (.text:_c_int00_noargs)
-                  0000c8cc    0000001a     main.obj (.text:setupButton)
-                  0000c8e6    00000014     rts430_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset:__TI_zero_init_nomemset)
-                  0000c8fa    00000012                     : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
-                  0000c90c    00000012                     : memcpy.c.obj (.text:memcpy)
-                  0000c91e    00000010     main.obj (.text:Port1_ISR)
-                  0000c92e    00000010     rts430_eabi.lib : epilog.asm.obj (.text)
-                  0000c93e    0000000e     DCMotor.obj (.text:motorSetup)
-                  0000c94c    00000008     rts430_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
-                  0000c954    00000006                     : exit.c.obj (.text:abort)
-                  0000c95a    00000004                     : pre_init.c.obj (.text:_system_pre_init)
-                  0000c95e    00000002                     : startup.c.obj (.text:_system_post_cinit)
+                  0000c12e    00000118     main.obj (.text:stateControl)
+                  0000c246    000000d4     main.obj (.text:checkFlags)
+                  0000c31a    000000ca     main.obj (.text:main)
+                  0000c3e4    000000c2     main.obj (.text:alignToWall)
+                  0000c4a6    00000082     Ultrasonic.obj (.text:ultrasonicSetup)
+                  0000c528    00000080     main.obj (.text:Timer1_A1_ISR)
+                  0000c5a8    0000007c     rts430_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
+                  0000c624    0000006e     main.obj (.text:Timer0_A1_ISR)
+                  0000c692    0000004c     DCMotor.obj (.text:motorOutput)
+                  0000c6de    0000004c     rts430_eabi.lib : lsr16.asm.obj (.text)
+                  0000c72a    0000004a     Ultrasonic.obj (.text:ultrasonicTrigger)
+                  0000c774    00000048     main.obj (.text:timeIncrement)
+                  0000c7bc    00000042     rts430_eabi.lib : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit:__TI_auto_init_nobinit_nopinit)
+                  0000c7fe    00000034     Servo.obj (.text:servoTurn)
+                  0000c832    00000032     main.obj (.text:Timer0_A0_ISR)
+                  0000c864    0000002c     rts430_eabi.lib : lsl16.asm.obj (.text)
+                  0000c890    00000026     main.obj (.text:setupTimerRADAR)
+                  0000c8b6    00000022     Servo.obj (.text:servoSetup)
+                  0000c8d8    00000020     main.obj (.text:setupTimerSchedule)
+                  0000c8f8    0000001c     rts430_eabi.lib : boot.c.obj (.text:_c_int00_noargs)
+                  0000c914    0000001a     main.obj (.text:setupButton)
+                  0000c92e    00000014     rts430_eabi.lib : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset:__TI_zero_init_nomemset)
+                  0000c942    00000012                     : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
+                  0000c954    00000012                     : memcpy.c.obj (.text:memcpy)
+                  0000c966    00000010     main.obj (.text:Port1_ISR)
+                  0000c976    00000010     rts430_eabi.lib : epilog.asm.obj (.text)
+                  0000c986    0000000e     DCMotor.obj (.text:motorSetup)
+                  0000c994    00000008     rts430_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
+                  0000c99c    00000006                     : exit.c.obj (.text:abort)
+                  0000c9a2    00000004                     : pre_init.c.obj (.text:_system_pre_init)
+                  0000c9a6    00000002                     : startup.c.obj (.text:_system_post_cinit)
 
-.cinit     0    0000c960    00000042     
-                  0000c960    0000002f     (.cinit..data.load) [load image, compression = lzss]
-                  0000c98f    00000001     --HOLE-- [fill = 0]
-                  0000c990    00000006     (__TI_handler_table)
-                  0000c996    00000004     (.cinit..bss.load) [load image, compression = zero_init]
-                  0000c99a    00000008     (__TI_cinit_table)
+.cinit     0    0000c9a8    0000003e     
+                  0000c9a8    0000002b     (.cinit..data.load) [load image, compression = lzss]
+                  0000c9d3    00000001     --HOLE-- [fill = 0]
+                  0000c9d4    00000006     (__TI_handler_table)
+                  0000c9da    00000004     (.cinit..bss.load) [load image, compression = zero_init]
+                  0000c9de    00000008     (__TI_cinit_table)
 
 .binit     0    0000c000    00000000     
 
@@ -167,12 +166,12 @@ MODULE SUMMARY
        Module                       code   ro data   rw data
        ------                       ----   -------   -------
     .\
-       main.obj                     1592   8         109    
+       main.obj                     1662   8         106    
        Ultrasonic.obj               204    0         0      
        DCMotor.obj                  90     0         0      
-       Servo.obj                    84     0         0      
+       Servo.obj                    86     0         0      
     +--+----------------------------+------+---------+---------+
-       Total:                       1970   8         109    
+       Total:                       2042   8         106    
                                                             
     C:\ti\ccs1240\ccs\tools\compiler\ti-cgt-msp430_21.6.1.LTS\lib\rts430_eabi.lib
        copy_decompress_lzss.c.obj   124    0         0      
@@ -201,21 +200,21 @@ MODULE SUMMARY
        Total:                       430    20        0      
                                                             
        Stack:                       0      0         80     
-       Linker Generated:            0      65        0      
+       Linker Generated:            0      61        0      
     +--+----------------------------+------+---------+---------+
-       Grand Total:                 2400   93        189    
+       Grand Total:                 2472   89        186    
 
 
 LINKER GENERATED COPY TABLES
 
-__TI_cinit_table @ 0000c99a records: 2, size/record: 4, table size: 8
-	.data: load addr=0000c960, load size=0000002f bytes, run addr=00000200, run size=0000006c bytes, compression=lzss
-	.bss: load addr=0000c996, load size=00000004 bytes, run addr=0000026c, run size=00000002 bytes, compression=zero_init
+__TI_cinit_table @ 0000c9de records: 2, size/record: 4, table size: 8
+	.data: load addr=0000c9a8, load size=0000002b bytes, run addr=00000200, run size=00000068 bytes, compression=lzss
+	.bss: load addr=0000c9da, load size=00000004 bytes, run addr=00000268, run size=00000002 bytes, compression=zero_init
 
 
 LINKER GENERATED HANDLER TABLE
 
-__TI_handler_table @ 0000c990 records: 3, size/record: 2, table size: 6
+__TI_handler_table @ 0000c9d4 records: 3, size/record: 2, table size: 6
 	index: 0, handler: __TI_zero_init
 	index: 1, handler: __TI_decompress_lzss
 	index: 2, handler: __TI_decompress_none
@@ -235,7 +234,7 @@ address   name
 00000057  BCSCTL1                       
 00000058  BCSCTL2                       
 00000053  BCSCTL3                       
-0000c954  C$$EXIT                       
+0000c99c  C$$EXIT                       
 00000059  CACTL1                        
 0000005a  CACTL2                        
 000010fb  CALBC1_12MHZ                  
@@ -279,8 +278,7 @@ address   name
 00000010  P3REN                         
 0000001b  P3SEL                         
 00000043  P3SEL2                        
-0000c91e  Port1_ISR                     
-00000239  RADARDirection                
+0000c966  Port1_ISR                     
 00000200  Schedule                      
 00000172  TA0CCR0                       
 00000174  TA0CCR1                       
@@ -305,9 +303,9 @@ address   name
 000010c0  TLV_CHECKSUM                  
 000010f7  TLV_DCO_30_LEN                
 000010f6  TLV_DCO_30_TAG                
-0000c7b8  Timer0_A0_ISR                 
-0000c5de  Timer0_A1_ISR                 
-0000c4e2  Timer1_A1_ISR                 
+0000c832  Timer0_A0_ISR                 
+0000c624  Timer0_A1_ISR                 
+0000c528  Timer1_A1_ISR                 
 0000005d  UCA0ABCTL                     
 00000062  UCA0BR0                       
 00000063  UCA0BR1                       
@@ -332,15 +330,15 @@ address   name
 00000120  WDTCTL                        
 00000400  __STACK_END                   
 00000050  __STACK_SIZE                  
-0000c99a  __TI_CINIT_Base               
-0000c9a2  __TI_CINIT_Limit              
-0000c9a2  __TI_CINIT_Warm               
-0000c990  __TI_Handler_Table_Base       
-0000c996  __TI_Handler_Table_Limit      
-0000c94c  __TI_ISR_TRAP                 
-0000c776  __TI_auto_init_nobinit_nopinit
-0000c562  __TI_decompress_lzss          
-0000c8fa  __TI_decompress_none          
+0000c9de  __TI_CINIT_Base               
+0000c9e6  __TI_CINIT_Limit              
+0000c9e6  __TI_CINIT_Warm               
+0000c9d4  __TI_Handler_Table_Base       
+0000c9da  __TI_Handler_Table_Limit      
+0000c994  __TI_ISR_TRAP                 
+0000c7bc  __TI_auto_init_nobinit_nopinit
+0000c5a8  __TI_decompress_lzss          
+0000c942  __TI_decompress_none          
 0000ffe0  __TI_int00                    
 0000ffe4  __TI_int02                    
 0000ffe6  __TI_int03                    
@@ -357,86 +355,84 @@ address   name
 ffffffff  __TI_pprof_out_hndl           
 ffffffff  __TI_prof_data_size           
 ffffffff  __TI_prof_data_start          
-0000c8e6  __TI_zero_init_nomemset       
+0000c92e  __TI_zero_init_nomemset       
 ffffffff  __c_args__                    
-0000c93a  __mspabi_func_epilog_1        
-0000c938  __mspabi_func_epilog_2        
-0000c936  __mspabi_func_epilog_3        
-0000c934  __mspabi_func_epilog_4        
-0000c932  __mspabi_func_epilog_5        
-0000c930  __mspabi_func_epilog_6        
-0000c92e  __mspabi_func_epilog_7        
-0000c81c  __mspabi_slli                 
-0000c844  __mspabi_slli_1               
-0000c832  __mspabi_slli_10              
-0000c830  __mspabi_slli_11              
-0000c82e  __mspabi_slli_12              
-0000c82c  __mspabi_slli_13              
-0000c82a  __mspabi_slli_14              
-0000c828  __mspabi_slli_15              
-0000c842  __mspabi_slli_2               
-0000c840  __mspabi_slli_3               
-0000c83e  __mspabi_slli_4               
-0000c83c  __mspabi_slli_5               
-0000c83a  __mspabi_slli_6               
-0000c838  __mspabi_slli_7               
-0000c836  __mspabi_slli_8               
-0000c834  __mspabi_slli_9               
-0000c698  __mspabi_srli                 
-0000c6de  __mspabi_srli_1               
-0000c6ba  __mspabi_srli_10              
-0000c6b6  __mspabi_srli_11              
-0000c6b2  __mspabi_srli_12              
-0000c6ae  __mspabi_srli_13              
-0000c6aa  __mspabi_srli_14              
-0000c6a6  __mspabi_srli_15              
-0000c6da  __mspabi_srli_2               
-0000c6d6  __mspabi_srli_3               
-0000c6d2  __mspabi_srli_4               
-0000c6ce  __mspabi_srli_5               
-0000c6ca  __mspabi_srli_6               
-0000c6c6  __mspabi_srli_7               
-0000c6c2  __mspabi_srli_8               
-0000c6be  __mspabi_srli_9               
-0000c8b0  _c_int00_noargs               
+0000c982  __mspabi_func_epilog_1        
+0000c980  __mspabi_func_epilog_2        
+0000c97e  __mspabi_func_epilog_3        
+0000c97c  __mspabi_func_epilog_4        
+0000c97a  __mspabi_func_epilog_5        
+0000c978  __mspabi_func_epilog_6        
+0000c976  __mspabi_func_epilog_7        
+0000c864  __mspabi_slli                 
+0000c88c  __mspabi_slli_1               
+0000c87a  __mspabi_slli_10              
+0000c878  __mspabi_slli_11              
+0000c876  __mspabi_slli_12              
+0000c874  __mspabi_slli_13              
+0000c872  __mspabi_slli_14              
+0000c870  __mspabi_slli_15              
+0000c88a  __mspabi_slli_2               
+0000c888  __mspabi_slli_3               
+0000c886  __mspabi_slli_4               
+0000c884  __mspabi_slli_5               
+0000c882  __mspabi_slli_6               
+0000c880  __mspabi_slli_7               
+0000c87e  __mspabi_slli_8               
+0000c87c  __mspabi_slli_9               
+0000c6de  __mspabi_srli                 
+0000c724  __mspabi_srli_1               
+0000c700  __mspabi_srli_10              
+0000c6fc  __mspabi_srli_11              
+0000c6f8  __mspabi_srli_12              
+0000c6f4  __mspabi_srli_13              
+0000c6f0  __mspabi_srli_14              
+0000c6ec  __mspabi_srli_15              
+0000c720  __mspabi_srli_2               
+0000c71c  __mspabi_srli_3               
+0000c718  __mspabi_srli_4               
+0000c714  __mspabi_srli_5               
+0000c710  __mspabi_srli_6               
+0000c70c  __mspabi_srli_7               
+0000c708  __mspabi_srli_8               
+0000c704  __mspabi_srli_9               
+0000c8f8  _c_int00_noargs               
 0000fffe  _reset_vector                 
 000003b0  _stack                        
-0000c95e  _system_post_cinit            
-0000c95a  _system_pre_init              
-0000c954  abort                         
-0000c3ce  alignToWall                   
-00000240  buttonPressed                 
-0000023c  canDetectDist                 
-0000c230  checkFlags                    
+0000c9a6  _system_post_cinit            
+0000c9a2  _system_pre_init              
+0000c99c  abort                         
+0000c3e4  alignToWall                   
+00000257  buttonPressed                 
+0000c246  checkFlags                    
 0000c000  checkSchedule                 
 00000260  currentTime                   
-00000258  flag                          
-0000026c  leftWall                      
-0000c304  main                          
-0000c90c  memcpy                        
+0000024c  flag                          
+00000268  leftWall                      
+0000c31a  main                          
+0000c954  memcpy                        
 00000218  motorDrive                    
-0000c64c  motorOutput                   
-0000c93e  motorSetup                    
+0000c692  motorOutput                   
+0000c986  motorSetup                    
 00000228  motorSteer                    
-00000264  servoA                        
-0000c86e  servoSetup                    
-0000c7ea  servoTurn                     
-0000c8cc  setupButton                   
-0000c848  setupTimerRADAR               
-0000c890  setupTimerSchedule            
-00000238  state                         
+0000025a  servoA                        
+0000c8b6  servoSetup                    
+0000c7fe  servoTurn                     
+0000c914  setupButton                   
+0000c890  setupTimerRADAR               
+0000c8d8  setupTimerSchedule            
+00000254  state                         
 0000c12e  stateControl                  
-0000c72e  timeIncrement                 
-0000023e  turnState                     
-0000023f  turnStateTime                 
-00000244  ultraLeft                     
-0000024e  ultraRADAR                    
-00000242  ultraRADARRead                
-00000241  ultraRead                     
-0000c460  ultrasonicSetup               
-0000c6e4  ultrasonicTrigger             
-00000268  wallDistances                 
-0000023a  wallTolerance                 
+0000c774  timeIncrement                 
+00000255  turnState                     
+00000256  turnStateTime                 
+00000238  ultraLeft                     
+00000242  ultraRADAR                    
+00000259  ultraRADARRead                
+00000258  ultraRead                     
+0000c4a6  ultrasonicSetup               
+0000c72a  ultrasonicTrigger             
+00000264  wallDistances                 
 
 
 GLOBAL SYMBOLS: SORTED BY Symbol Address 
@@ -532,22 +528,19 @@ address   name
 00000200  Schedule                      
 00000218  motorDrive                    
 00000228  motorSteer                    
-00000238  state                         
-00000239  RADARDirection                
-0000023a  wallTolerance                 
-0000023c  canDetectDist                 
-0000023e  turnState                     
-0000023f  turnStateTime                 
-00000240  buttonPressed                 
-00000241  ultraRead                     
-00000242  ultraRADARRead                
-00000244  ultraLeft                     
-0000024e  ultraRADAR                    
-00000258  flag                          
+00000238  ultraLeft                     
+00000242  ultraRADAR                    
+0000024c  flag                          
+00000254  state                         
+00000255  turnState                     
+00000256  turnStateTime                 
+00000257  buttonPressed                 
+00000258  ultraRead                     
+00000259  ultraRADARRead                
+0000025a  servoA                        
 00000260  currentTime                   
-00000264  servoA                        
-00000268  wallDistances                 
-0000026c  leftWall                      
+00000264  wallDistances                 
+00000268  leftWall                      
 000003b0  _stack                        
 00000400  __STACK_END                   
 000010c0  TLV_CHECKSUM                  
@@ -565,78 +558,78 @@ address   name
 000010ff  CALBC1_1MHZ                   
 0000c000  checkSchedule                 
 0000c12e  stateControl                  
-0000c230  checkFlags                    
-0000c304  main                          
-0000c3ce  alignToWall                   
-0000c460  ultrasonicSetup               
-0000c4e2  Timer1_A1_ISR                 
-0000c562  __TI_decompress_lzss          
-0000c5de  Timer0_A1_ISR                 
-0000c64c  motorOutput                   
-0000c698  __mspabi_srli                 
-0000c6a6  __mspabi_srli_15              
-0000c6aa  __mspabi_srli_14              
-0000c6ae  __mspabi_srli_13              
-0000c6b2  __mspabi_srli_12              
-0000c6b6  __mspabi_srli_11              
-0000c6ba  __mspabi_srli_10              
-0000c6be  __mspabi_srli_9               
-0000c6c2  __mspabi_srli_8               
-0000c6c6  __mspabi_srli_7               
-0000c6ca  __mspabi_srli_6               
-0000c6ce  __mspabi_srli_5               
-0000c6d2  __mspabi_srli_4               
-0000c6d6  __mspabi_srli_3               
-0000c6da  __mspabi_srli_2               
-0000c6de  __mspabi_srli_1               
-0000c6e4  ultrasonicTrigger             
-0000c72e  timeIncrement                 
-0000c776  __TI_auto_init_nobinit_nopinit
-0000c7b8  Timer0_A0_ISR                 
-0000c7ea  servoTurn                     
-0000c81c  __mspabi_slli                 
-0000c828  __mspabi_slli_15              
-0000c82a  __mspabi_slli_14              
-0000c82c  __mspabi_slli_13              
-0000c82e  __mspabi_slli_12              
-0000c830  __mspabi_slli_11              
-0000c832  __mspabi_slli_10              
-0000c834  __mspabi_slli_9               
-0000c836  __mspabi_slli_8               
-0000c838  __mspabi_slli_7               
-0000c83a  __mspabi_slli_6               
-0000c83c  __mspabi_slli_5               
-0000c83e  __mspabi_slli_4               
-0000c840  __mspabi_slli_3               
-0000c842  __mspabi_slli_2               
-0000c844  __mspabi_slli_1               
-0000c848  setupTimerRADAR               
-0000c86e  servoSetup                    
-0000c890  setupTimerSchedule            
-0000c8b0  _c_int00_noargs               
-0000c8cc  setupButton                   
-0000c8e6  __TI_zero_init_nomemset       
-0000c8fa  __TI_decompress_none          
-0000c90c  memcpy                        
-0000c91e  Port1_ISR                     
-0000c92e  __mspabi_func_epilog_7        
-0000c930  __mspabi_func_epilog_6        
-0000c932  __mspabi_func_epilog_5        
-0000c934  __mspabi_func_epilog_4        
-0000c936  __mspabi_func_epilog_3        
-0000c938  __mspabi_func_epilog_2        
-0000c93a  __mspabi_func_epilog_1        
-0000c93e  motorSetup                    
-0000c94c  __TI_ISR_TRAP                 
-0000c954  C$$EXIT                       
-0000c954  abort                         
-0000c95a  _system_pre_init              
-0000c95e  _system_post_cinit            
-0000c990  __TI_Handler_Table_Base       
-0000c996  __TI_Handler_Table_Limit      
-0000c99a  __TI_CINIT_Base               
-0000c9a2  __TI_CINIT_Limit              
-0000c9a2  __TI_CINIT_Warm               
+0000c246  checkFlags                    
+0000c31a  main                          
+0000c3e4  alignToWall                   
+0000c4a6  ultrasonicSetup               
+0000c528  Timer1_A1_ISR                 
+0000c5a8  __TI_decompress_lzss          
+0000c624  Timer0_A1_ISR                 
+0000c692  motorOutput                   
+0000c6de  __mspabi_srli                 
+0000c6ec  __mspabi_srli_15              
+0000c6f0  __mspabi_srli_14              
+0000c6f4  __mspabi_srli_13              
+0000c6f8  __mspabi_srli_12              
+0000c6fc  __mspabi_srli_11              
+0000c700  __mspabi_srli_10              
+0000c704  __mspabi_srli_9               
+0000c708  __mspabi_srli_8               
+0000c70c  __mspabi_srli_7               
+0000c710  __mspabi_srli_6               
+0000c714  __mspabi_srli_5               
+0000c718  __mspabi_srli_4               
+0000c71c  __mspabi_srli_3               
+0000c720  __mspabi_srli_2               
+0000c724  __mspabi_srli_1               
+0000c72a  ultrasonicTrigger             
+0000c774  timeIncrement                 
+0000c7bc  __TI_auto_init_nobinit_nopinit
+0000c7fe  servoTurn                     
+0000c832  Timer0_A0_ISR                 
+0000c864  __mspabi_slli                 
+0000c870  __mspabi_slli_15              
+0000c872  __mspabi_slli_14              
+0000c874  __mspabi_slli_13              
+0000c876  __mspabi_slli_12              
+0000c878  __mspabi_slli_11              
+0000c87a  __mspabi_slli_10              
+0000c87c  __mspabi_slli_9               
+0000c87e  __mspabi_slli_8               
+0000c880  __mspabi_slli_7               
+0000c882  __mspabi_slli_6               
+0000c884  __mspabi_slli_5               
+0000c886  __mspabi_slli_4               
+0000c888  __mspabi_slli_3               
+0000c88a  __mspabi_slli_2               
+0000c88c  __mspabi_slli_1               
+0000c890  setupTimerRADAR               
+0000c8b6  servoSetup                    
+0000c8d8  setupTimerSchedule            
+0000c8f8  _c_int00_noargs               
+0000c914  setupButton                   
+0000c92e  __TI_zero_init_nomemset       
+0000c942  __TI_decompress_none          
+0000c954  memcpy                        
+0000c966  Port1_ISR                     
+0000c976  __mspabi_func_epilog_7        
+0000c978  __mspabi_func_epilog_6        
+0000c97a  __mspabi_func_epilog_5        
+0000c97c  __mspabi_func_epilog_4        
+0000c97e  __mspabi_func_epilog_3        
+0000c980  __mspabi_func_epilog_2        
+0000c982  __mspabi_func_epilog_1        
+0000c986  motorSetup                    
+0000c994  __TI_ISR_TRAP                 
+0000c99c  C$$EXIT                       
+0000c99c  abort                         
+0000c9a2  _system_pre_init              
+0000c9a6  _system_post_cinit            
+0000c9d4  __TI_Handler_Table_Base       
+0000c9da  __TI_Handler_Table_Limit      
+0000c9de  __TI_CINIT_Base               
+0000c9e6  __TI_CINIT_Limit              
+0000c9e6  __TI_CINIT_Warm               
 0000ffe0  __TI_int00                    
 0000ffe4  __TI_int02                    
 0000ffe6  __TI_int03                    
@@ -656,4 +649,4 @@ ffffffff  __TI_prof_data_size
 ffffffff  __TI_prof_data_start          
 ffffffff  __c_args__                    
 
-[212 symbols]
+[209 symbols]

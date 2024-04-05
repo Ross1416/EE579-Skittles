@@ -19,10 +19,12 @@ Change History
 struct Servo{
     char pwmPin;
     unsigned int speed;
+    char direction;
 };
 
 extern void    servoSetup(struct Servo *servoMotor);
-extern void    servoTurn(struct Servo *servoMotor, char direction);
+extern void    servoTurn(struct Servo *servoMotor);
+extern void    servoCenter();
 
 //SERVO PWM LIMITS
 #define PWM_SERVO_UPPER   2200

@@ -107,7 +107,7 @@ void    timeIncrement(struct Time *time, int sec, int ms);
 void    alignToWall();
 
 //==============================================================================
-// MACRO
+// MACROs
 //------------------------------------------------------------------------------
 //Available clock information
 #define SMCK_FREQ      1000000
@@ -121,7 +121,6 @@ void    alignToWall();
 //Scheduler information
 #define CLOCK_USED_SCHEDULER    SMCK_FREQ
 #define SECOND_COUNT   			1000		//1000 ms = 1s
-#define TIMER_INC_MS   			2			//Schedule clock ticks every 2 ms
 #define isTime(X) ((currentTime.sec == X.sec) && (currentTime.ms == X.ms))
 
 //Car States
@@ -130,7 +129,6 @@ void    alignToWall();
 #define STOP        2
 
 //Wall alignment
-#define WALLREADINGS  	2	//Number of wall readings
 #define STRAIGHT    	0
 #define AWAY        	1
 #define CLOSE       	2
@@ -146,11 +144,23 @@ void    alignToWall();
 #define RGB_YELLOW  0xA
 #define RGB_WHITE   0x2A
 
-//Drive Speeds
-#define TOTAL_PWM_DC_MOTORS    100
-#define SPEED_TOP     1*TOTAL_PWM_DC_MOTORS
-#define SPEED_SLOW    0.5*TOTAL_PWM_DC_MOTORS
 
+//==============================================================================
+// CHANGEABLE SETTINGS MACROs
+//------------------------------------------------------------------------------
+//Scheduler control
+#define TIMER_INC_MS    2           //Scheduler interrupts period (2 ms)
+
+//Drive Speeds
+#define MOTOR_PWM_PERIOD    100                     //PWM period of motors.
+#define SPEED_TOP           1*MOTOR_PWM_PERIOD      //Top speed of the motors as percentage of PWM.
+#define SPEED_SLOW          0.5*MOTOR_PWM_PERIOD    //Slower speed when changing direction.
+#define READINGS_TO_SLOW    10                      //Number of distance readings taken whilst turning before slowing down.
+
+//Wall readings control
+#define WALL_READINGS   2                   //Number of wall readings to decrease before changing state (Possibly not used).
+#define WALL_TOLERANCE  dist2pulse(5)      //Distance +- correct distance from wall
+#define CAN_DETECT_DIST dist2pulse(15)     //Distance closer then wall
 
 //==============================================================================
 // Global Variable Initialisation
@@ -163,26 +173,25 @@ struct flags flag           =   {0};       //Flag when something ready to be att
 //What car should be doing
 char state  =   START;
 
-//Motor info (On Port 1)
-struct MotorDC motorDrive = {0, BIT5, BIT4, {0, TOTAL_PWM_DC_MOTORS, 0, SPEED_TOP, 1}};
-struct MotorDC motorSteer = {0, BIT6, BIT7, {0, TOTAL_PWM_DC_MOTORS, 0, TOTAL_PWM_DC_MOTORS, 1}};
+//DC Motor info (On Port 1)
+struct MotorDC motorDrive = {0, BIT5, BIT4, {0, MOTOR_PWM_PERIOD, 0, SPEED_TOP, 1}};
+struct MotorDC motorSteer = {0, BIT6, BIT7, {0, MOTOR_PWM_PERIOD, 0, MOTOR_PWM_PERIOD, 1}};
 
-//Ultrasonic info (Port 2)
+//Wall Ultrasonic info (Port 2)
 struct Ultrasonic ultraLeft = {0, {0, 0}, 0, BIT0, BIT2, 2};
 //struct Ultrasonic ultraRight = {0, {0, 0}, 0, BIT0, BIT1, 2};
+
+//RADAR Ultrasonic info (Port 1)
 struct Ultrasonic ultraRADAR = {0, {0, 0}, 0, BIT0, BIT2, 1};
 
 //Servo info (Port 2)
-struct Servo servoA = {BIT4, 50};
-char RADARDirection = 0;
+struct Servo servoA = {BIT4, 50, 0};    //PWM on Port 2.4, change PWM by 50 clock ticks when turned, initially turn anti-clockwise
 
-//Wall alignment
+//Wall alignment info
 volatile int leftWall;			//Initial distance to maintain to left wall
-//volatile int rightWall;          //Initial distance to maintain to left wall
-int wallTolerance = dist2pulse(5);		//Distance +- correct distance from wall
-int canDetectDist = dist2pulse(15);		//Distance closer then wall
+//volatile int rightWall;          //Initial distance to maintain to right wall
 char turnState = STRAIGHT;				//Wall alignment turning instruction
-int  wallDistances[WALLREADINGS] = {0};	//Distance readings to wall
+int  wallDistances[WALL_READINGS] = {0};	//Distance readings to wall
 char turnStateTime = 0;					//Time spent turning to correct for wall
 
 //Flags for after main flags are dealt with and then results are used for stateControl()
@@ -534,7 +543,7 @@ void checkFlags()
     if (flag.ultraWallRead)
     {
 		//Update array of wall readings
-        for(i = WALLREADINGS-1; i > 0; i--)
+        for(i = WALL_READINGS-1; i > 0; i--)
         {
             wallDistances[i] = wallDistances[i - 1];
         }
@@ -651,7 +660,7 @@ void stateControl()
 		if (ultraRead)
 		{
 			//When reading is suddenly closer can detected so change state
-			if(wallDistances[0] < leftWall-canDetectDist)
+			if(wallDistances[0] < leftWall-CAN_DETECT_DIST)
 			{
 				flag.stateChange = 1;	//Change state to stop
 			    P2OUT &= ~0x2A;
@@ -702,13 +711,13 @@ void stateControl()
 		{
 		    if (TA1CCR2 >= PWM_SERVO_UPPER)
 		    {
-		        RADARDirection = 0; //Anti-clockwise
+		        servoA.direction = 0; //Anti-clockwise
 		    }
 		    else if (TA1CCR2 <= PWM_SERVO_LOWER)
 		    {
-		        RADARDirection = 1; //Clockwise
+		        servoA.direction = 1; //Clockwise
 		    }
-			servoTurn(&servoA, RADARDirection);
+			servoTurn(&servoA);
 		}
 		timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
 		ultraRADARRead = 0;
@@ -794,14 +803,13 @@ void setupTimerRADAR()
 void alignToWall()
 {
     char turnStatePrevious = turnState;
-    char i = 0;
 
     //When state change is based on measured distance to wall
-    if(wallDistances[0] < leftWall-wallTolerance)       //When drifted closer to wall
+    if(wallDistances[0] < leftWall-WALL_TOLERANCE)       //When drifted closer to wall
     {
         turnState = AWAY;
     }
-    else if(wallDistances[0] > leftWall+wallTolerance)  //When drifted further from wall
+    else if(wallDistances[0] > leftWall+WALL_TOLERANCE)  //When drifted further from wall
     {
         turnState = CLOSE;
     }
@@ -815,7 +823,7 @@ void alignToWall()
     //if (turnState == CLOSE | turnState == STRAIGHTEN)
     //{
     //    //Determine if distance is increasing
-    //    for(i = 0; i < WALLREADINGS-1; i++)
+    //    for(i = 0; i < WALL_READINGS-1; i++)
     //    {
     //        if(wallDistances[i] < wallDistances[i + 1]-5) //Check if distance ever decreases
     //        {
@@ -823,7 +831,7 @@ void alignToWall()
     //        }
     //    }
 	//	//If for loop went to completion
-    //    if (i == WALLREADINGS-1)    //Distance measured is increasing
+    //    if (i == WALL_READINGS-1)    //Distance measured is increasing
     //    {
     //        switch(turnState)
     //        {
@@ -842,7 +850,7 @@ void alignToWall()
     {
         //When in same state for long enough but not straight state, 
 		//slow down to not overshoot corrections
-        if((++turnStateTime) >= 20 && (turnState != STRAIGHT))
+        if((++turnStateTime) >= READINGS_TO_SLOW && (turnState != STRAIGHT))
         {
             motorDrive.pwm.aMs = SPEED_SLOW;    //Half driving speed
         }
@@ -853,7 +861,7 @@ void alignToWall()
     }
     else    //When state has changed
     {
-        turnStateTime = 0;  //Changed state so reset timer
+        turnStateTime = 0;  //Changed state so reset time to slow
         motorDrive.pwm.aMs = SPEED_TOP;   //Full speed
 
 		//Control steering according to new state

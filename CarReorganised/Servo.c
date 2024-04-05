@@ -27,10 +27,10 @@ void servoSetup(struct Servo *servoMotor)
     P2SEL |= servoMotor->pwmPin;
 }
 
-void servoTurn(struct Servo *servoMotor, char direction)
+void servoTurn(struct Servo *servoMotor)
 {
     //Rotate
-    if (direction == 1)     //Turn clockwise
+    if (servoMotor->direction == 1)     //Turn clockwise
     {
         TA1CCR2 += servoMotor->speed;
     }
@@ -48,6 +48,11 @@ void servoTurn(struct Servo *servoMotor, char direction)
     {
         TA1CCR2 = PWM_SERVO_LOWER;
     }
+}
+
+void    servoCenter()
+{
+    TA1CCR2 = 1500;
 }
 //==============================================================================
 // End of File :  CarReorganised/Servo.h
