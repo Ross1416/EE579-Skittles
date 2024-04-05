@@ -1,0 +1,49 @@
+Change Component Comment : Designator=J9 Old Comment=B2B-PH-K-S_LF__SN_ New Comment=Drive Motor
+Change Component Comment : Designator=J10 Old Comment=B2B-PH-K-S_LF__SN_ New Comment=Steer Motor
+Added Component: Designator=J?(RHDR3W60P0X254_1X3_762X254X700P)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "801-87-003-10-001101"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/801-87-003-10-001101/preci-dip-sa"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "http://www.precidip.com/en/Products/PCB-Connectors/pview/801-PP-NNN-10-001101.html"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "7mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "Preci-Dip"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "801-87-003-10-001101"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = "437-8018700310001101"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = "https://www.mouser.co.uk/ProductDetail/Preci-dip/801-87-003-10-001101?qs=FtMuP6KVi2T66jAxB5rZkg%3D%3D"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=C1-1
+Added Pin To Net: NetName=+3.3 Pin=C1-2
+Added Pin To Net: NetName=GND Pin=C2-1
+Added Pin To Net: NetName=+3.3 Pin=C2-2
+Added Pin To Net: NetName=GND Pin=C3-1
+Added Pin To Net: NetName=+3.3 Pin=C3-2
+Added Pin To Net: NetName=+3.3 Pin=J5-1
+Added Pin To Net: NetName=GND Pin=J5-20
+Added Pin To Net: NetName=VCC Pin=J?-1
+Added Pin To Net: NetName=+3.3 Pin=J?-2
+Added Pin To Net: NetName=GND Pin=J?-3
+Added Pin To Net: NetName=GND Pin=J?-3
+Added Pin To Net: NetName=VCC Pin=J?-4
+Change Net Name : Old Net Name=NetR1_1 New Net Name=UltraEchoA
+Change Net Name : Old Net Name=NetR2_1 New Net Name=UltraEchoB
+Change Net Name : Old Net Name=NetR3_1 New Net Name=UltraEchoC
+Added Pin To Net: NetName=DriveMotor_A Pin=J?-6
+Added Net: Name=DriveMotor_A
+Added Pin To Net: NetName=DriveMotor_B Pin=J?-5
+Added Net: Name=DriveMotor_B
+Added Pin To Net: NetName=NetJ9_1 Pin=J9-1
+Added Pin To Net: NetName=NetJ9_1 Pin=J?-2
+Added Net: Name=NetJ9_1
+Added Pin To Net: NetName=NetJ9_2 Pin=J9-2
+Added Pin To Net: NetName=NetJ9_2 Pin=J?-3
+Added Net: Name=NetJ9_2
+Added Pin To Net: NetName=NetJ10_1 Pin=J10-1
+Added Pin To Net: NetName=NetJ10_1 Pin=J?-4
+Added Net: Name=NetJ10_1
+Added Pin To Net: NetName=NetJ10_2 Pin=J10-2
+Added Pin To Net: NetName=NetJ10_2 Pin=J?-5
+Added Net: Name=NetJ10_2
+Added Pin To Net: NetName=SteerMotor_A Pin=J?-2
+Added Net: Name=SteerMotor_A
+Added Pin To Net: NetName=SteerMotor_B Pin=J?-1
+Added Net: Name=SteerMotor_B
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? 801-87-003-10-001101
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? 61300611821
