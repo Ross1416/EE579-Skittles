@@ -34,6 +34,7 @@ Change History
 #include "DCMotor.h"
 #include "Servo.h"
 #include "Ultrasonic.h"
+#include "Infrared.h"
 
 //==============================================================================
 // User-Defined Types
@@ -209,6 +210,9 @@ struct Ultrasonic ultraRADAR = {0, {0, 0}, 0, BIT0, BIT2, 1};
 
 //Servo info (Port 2)
 struct Servo servoA = {BIT4, (PWM_SERVO_UPPER-PWM_SERVO_LOWER)/NUMBER_OF_ANGLES_CHECKED, 0};    //PWM on Port 2.4, angle to be turned, initially turn anti-clockwise
+
+// IR info (Port 2)
+struct Infrared IR = {2, BIT3, BIT2};
 
 //Wall alignment info
 volatile int leftWall;			//Initial distance to maintain to left wall
@@ -935,6 +939,24 @@ void stateControl()
 		
 		P2OUT &= ~RGB_WHITE;
 		P2OUT |= RGB_GREEN;
+
+		// Check IR sensor - get colour
+		IRRead(IR);
+
+		// Decide HIT or AVOID depending on BLACK or WHITE can
+		if (IR->colour == 0)
+		{
+		    // Hit can if WHITE
+		    state = CAN_AVOID;
+		    flag.stateChange = 1;
+		}
+
+		if (IR->colour == 1)
+        {
+		    // Hit can if BLACK
+            state = CAN_HIT;
+            flag.stateChange = 1;
+        }
 
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
         if (buttonPressed)

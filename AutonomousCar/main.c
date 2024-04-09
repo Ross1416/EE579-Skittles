@@ -178,13 +178,6 @@ void 	motorSetup(struct MotorDC motor);
 #define FORWARD     1
 #define BACK        2
 
-//Ultrasonic distance info
-//#define TOLERANCE   dist2pulse(5)
-//#define CANDIST   	dist2pulse(20)
-
-int TOLERANCE = dist2pulse(1);
-int CANDIST = dist2pulse(10);
-
 //==============================================================================
 // Global Variable Initialisation
 //------------------------------------------------------------------------------
@@ -273,7 +266,6 @@ __interrupt void Timer1_A1_ISR (void)
         else
         {
             TA1CCTL1 |= CM_2;   //Capture on falling edge
-        else{
         }
         TA1CCTL1 &= ~CCIFG;
         break;
@@ -314,9 +306,9 @@ int main(void)
     flag.motorA = 1;
     motorA.direction = 0;
 
-//    timeIncrement(&Schedule.pwmMotorB, motorB.pwm.aSec, motorB.pwm.aMs);
+    timeIncrement(&Schedule.pwmMotorB, motorB.pwm.aSec, motorB.pwm.aMs);
     motorB.pwm.state = 1;
-    flag.motorB = 0;
+    flag.motorB = 1;
     motorB.direction = 0;
 
     //P2OUT &= ~0x2A;
@@ -492,7 +484,7 @@ void checkFlags()
 
 	if (flag.motorB)    //If steering motor needs to change
     {
-//		motorOutput(motorB);
+		motorOutput(motorB);
 		flag.motorB = 0;
 	}
 
@@ -611,7 +603,7 @@ void ultrasonicSetup(struct Ultrasonic ultra)
 	TA1CCTL2 &= ~CCIFG;
 
 	TA1CCTL1 |= CM_1 + CCIS_1 + CAP + CCIE + SCS;
-	TA1CCTL1 &= ~CCIFG;
+	TA1CCTL1 &= ~(CCIFG+SCCI);
 
 	TA1CTL |= MC_2;
 }
@@ -627,6 +619,7 @@ void wallAlignment()
 {
 	char turnStatePrevious = turnState;
 	char i = 0;
+	
 	//When state change is based on measured distance to wall
 	if(wallDistances[0] < startingDistance-wallTolerance)		//When drifted closer to wall
 	{
@@ -680,7 +673,7 @@ void wallAlignment()
 			motorA.pwm.aMs = 100;	//Full speed
 		}
 	}
-	else
+	else	//When state has changed
 	{
 		turnStateTime = 0;	//Changed state so reset timer
 		motorA.pwm.aMs = 100;	//Full speed
@@ -709,8 +702,6 @@ void wallAlignment()
 void motorSetup(struct MotorDC motor)
 {
 	P1DIR |= motor.pinA + motor.pinB;
-	P1OUT &= ~motor.pinA;
-	P1OUT &= ~motor.pinB;
 }
 
 

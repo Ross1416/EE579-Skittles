@@ -1,7 +1,7 @@
 ******************************************************************************
                   MSP430 Linker PC v21.6.1                     
 ******************************************************************************
->> Linked Tue Apr  9 13:56:24 2024
+>> Linked Tue Apr  9 16:14:13 2024
 
 OUTPUT FILE NAME:   <CarReorganised.out>
 ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 0000cdf4
@@ -187,7 +187,7 @@ MODULE SUMMARY
     +--+----------------------------+------+---------+---------+
        Total:                       3296   10        213    
                                                             
-    C:\ti\ccs1240\ccs\tools\compiler\ti-cgt-msp430_21.6.1.LTS\lib\rts430_eabi.lib
+    C:\ti\ccs1220\ccs\tools\compiler\ti-cgt-msp430_21.6.1.LTS\lib\rts430_eabi.lib
        copy_decompress_lzss.c.obj   124    0         0      
        lsr16.asm.obj                76     0         0      
        autoinit.c.obj               66     0         0      
