@@ -110,6 +110,7 @@ void    timeIncrement(struct Time *time, int sec, int ms);
 //Other Functionality
 void    alignToWall();
 void	RADAR();
+void    findAverage(unsigned char start, unsigned char numOfValues, int *values);
 
 //==============================================================================
 // MACROs
@@ -217,7 +218,7 @@ int  wallDistances[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 2000};	//Distance
 unsigned char turnStateTime = 0;					//Time spent turning to correct for wall
 int avgReading = 0;
 int avgOldReading = 0;
-//int avgNewReading = 0;
+int avgNewReading = 0;
 
 int RADARDistances[RADAR_READINGS] = {[0 ... RADAR_READINGS-1] = 2000};
 
@@ -238,7 +239,6 @@ unsigned int newAngle;
 
 //Approaching can variables
 unsigned char lostCan = 0;
-
 
 //Flags for after main flags are dealt with and then results are used for stateControl()
 char buttonPressed = 0;
@@ -765,17 +765,7 @@ void stateControl()
 		//Take ultrasonic readings to wall to stay aligned and if can is past on left
 		if (ultraRead)
 		{
-		    avgReading = 0;
-            //When reading is suddenly closer can detected so change state
-            for(i=0;i<WALL_READINGS;i++)
-            {
-                avgReading += wallDistances[i];
-            }
-            avgReading = avgReading/WALL_READINGS;
-            if (avgReading < 20)
-            {
-                avgReading = 32000;
-            }
+			findAverage(0, WALL_READINGS, wallDistances);
 
             if(avgReading < leftWall-CAN_DETECT_DIST)
             {
@@ -795,17 +785,7 @@ void stateControl()
 		//Take forward readings to see if can is in front of car
 		if (ultraRADARRead)
 		{
-		    avgReading = 0;
-            //When reading is suddenly closer can detected so change state
-            for(i=0;i<RADAR_READINGS;i++)
-            {
-                avgReading += RADARDistances[i];
-            }
-            avgReading = avgReading/RADAR_READINGS;
-            if (avgReading < 20)
-            {
-                avgReading = 32000;
-            }
+		    findAverage(0, RADAR_READINGS, RADARDistances);
 
             if(avgReading < MAX_FRONT_DETECT)
             {
@@ -863,11 +843,11 @@ void stateControl()
 		//Drive to heading of RADAR
         if (TA1CCR2 < 1500) //CAN TO THE LEFT?
         {
-            motorSteer.direction = LEFT;
+            motorSteer.direction = RIGHT;
         }
         else if (TA1CCR2 > 1500) //CAN TO THE RIGHT
         {
-            motorSteer.direction = RIGHT;
+            motorSteer.direction = LEFT;
         }
         else
         {
@@ -880,16 +860,7 @@ void stateControl()
 		{
 			//Get an average
 			avgOldReading = avgReading;
-			avgReading = 0;
-            for(i=0;i<RADAR_READINGS;i++)
-            {
-                avgReading += RADARDistances[i];
-            }
-            avgReading = avgReading/RADAR_READINGS;
-            if (avgReading < 20)
-            {
-                avgReading = 32000;
-            }
+			findAverage(0, RADAR_READINGS, RADARDistances);
 			
 			//When reading is close enough can is in front
             if(avgReading < MAX_FRONT_DETECT)
@@ -916,11 +887,11 @@ void stateControl()
 					
 					if (motorSteer.direction == RIGHT)
 					{
-						servoA.direction = 0;
+						servoA.direction = 1;
 					}
 					else if  (motorSteer.direction == LEFT)
 					{
-						servoA.direction = 1;
+						servoA.direction = 0;
 					}
 					else
 					{
@@ -1166,16 +1137,7 @@ void RADAR()
         //Get average reading for angle set to
         readingsOnAngle = 0;
         avgOldReading = avgReading;
-        avgReading = 0;
-        for(i=0;i<RADAR_READINGS;i++)
-        {
-            avgReading += RADARDistances[i];
-        }
-        avgReading = avgReading/RADAR_READINGS;
-        if (avgReading < 20)
-        {
-            avgReading = 32000;
-        }
+        findAverage(0, RADAR_READINGS, RADARDistances);
         RADARAtEachAngle[anglesChecked] = avgReading;
 
         //FIND ANOMALIES
@@ -1187,7 +1149,8 @@ void RADAR()
             if (anomalyPositions[anglesChecked-1]==0)
             {
                 //When reading suddenly closer
-                if ((avgReading < avgOldReading-200) & (avgReading < MAX_RADAR_DISTANCE))
+                //if ((avgReading < avgOldReading-200) & (avgReading < MAX_RADAR_DISTANCE))
+                if (avgReading < avgOldReading-200)
                 {
                     anomalyPositions[anglesChecked] = 1;
                     P2OUT |= RGB_BLUE;
@@ -1249,17 +1212,9 @@ void RADAR()
             //For each anomaly
             for (readingsOnAngle =0; readingsOnAngle<anomalyNumber; readingsOnAngle++)
             {
-                avgReading = 0;
-                //For each reading in the anomaly
-                for (i=anomalyStart[readingsOnAngle]; i < 1+anomalyEnd[readingsOnAngle]; i++)
-                {
-                    avgReading += RADARAtEachAngle[i];
-                }
-                avgReading = avgReading/(1+anomalyEnd[readingsOnAngle]-anomalyStart[readingsOnAngle]);
-                if (avgReading < 20)
-                {
-                    avgReading = 32000;
-                }
+                //Average reading of the anomaly
+                findAverage(anomalyStart[readingsOnAngle], 1+anomalyEnd[readingsOnAngle], RADARAtEachAngle);
+
                 if (avgReading < avgOldReading)
                 {
                     avgOldReading = avgReading;
@@ -1291,6 +1246,30 @@ void RADAR()
     {
         timeIncrement(&Schedule.ultraRADARStart, 0, 20);
     }
+}
+
+void    findAverage(unsigned char start, unsigned char numOfValues, int *values)
+{
+    unsigned char increments = 0;
+	avgReading = 0;
+	avgNewReading = 0;
+
+	for(increments=start;increments<numOfValues;increments++, values++)
+	{
+		avgNewReading += *values;
+
+		//If value has wrapped set to the maximum
+		if (avgNewReading < avgReading)
+		{
+			avgReading = 32000;
+			break;
+		}
+		avgReading = avgNewReading;
+	}
+	if (avgReading != 32000)
+	{
+		avgReading = avgReading/WALL_READINGS;
+	}
 }
 //==============================================================================
 // End of File : AutonomousCar/main.c
