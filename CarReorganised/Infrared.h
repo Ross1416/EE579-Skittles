@@ -24,7 +24,7 @@ struct Infrared{
 };
 
 extern void IRSetup(struct Infrared *ir);
-extern void readIR(struct Infrared *ir);
+extern void IRRead(struct Infrared *ir);
 
 #endif // INFRARED_H
 //==============================================================================
