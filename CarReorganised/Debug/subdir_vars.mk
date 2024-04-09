@@ -10,42 +10,36 @@ CMD_SRCS += \
 
 C_SRCS += \
 ../DCMotor.c \
-../Infrared.c \
 ../Servo.c \
 ../Ultrasonic.c \
 ../main.c 
 
 C_DEPS += \
 ./DCMotor.d \
-./Infrared.d \
 ./Servo.d \
 ./Ultrasonic.d \
 ./main.d 
 
 OBJS += \
 ./DCMotor.obj \
-./Infrared.obj \
 ./Servo.obj \
 ./Ultrasonic.obj \
 ./main.obj 
 
 OBJS__QUOTED += \
 "DCMotor.obj" \
-"Infrared.obj" \
 "Servo.obj" \
 "Ultrasonic.obj" \
 "main.obj" 
 
 C_DEPS__QUOTED += \
 "DCMotor.d" \
-"Infrared.d" \
 "Servo.d" \
 "Ultrasonic.d" \
 "main.d" 
 
 C_SRCS__QUOTED += \
 "../DCMotor.c" \
-"../Infrared.c" \
 "../Servo.c" \
 "../Ultrasonic.c" \
 "../main.c" 
