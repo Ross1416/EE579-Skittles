@@ -34,6 +34,7 @@ Change History
 #include "DCMotor.h"
 #include "Servo.h"
 #include "Ultrasonic.h"
+#include "Infrared.h"
 
 //==============================================================================
 // User-Defined Types

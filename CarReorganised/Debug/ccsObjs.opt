@@ -1,4 +1,5 @@
 "./DCMotor.obj"
+"./Infrared.obj"
 "./Servo.obj"
 "./Ultrasonic.obj"
 "./main.obj"
