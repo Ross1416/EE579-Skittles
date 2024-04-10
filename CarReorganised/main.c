@@ -22,6 +22,7 @@ Change History
 08-APR-2024 SARK fixed bug with ultrasonic readings and timer overflows
 08-APR-2024 SARK added code for car to approach can
 09-APR-2024 SARK added right ultrasonic code
+09-APR-2024 RI added AL's IR sensor functionality
 --------------------------------------------------------------------------------
 */
 
@@ -116,7 +117,7 @@ void    timeIncrement(struct Time *time, int sec, int ms);
 //Other Functionality
 void    alignToWall();
 void	RADAR();
-void    findAverage(unsigned char start, unsigned char numOfValues, int *values);
+void    findDistanceAverage(unsigned char start, unsigned char end, int *values);
 
 //==============================================================================
 // MACROs
@@ -165,12 +166,13 @@ void    findAverage(unsigned char start, unsigned char numOfValues, int *values)
 #define READINGS_TO_SPEED_CHANGE    5                      //Number of distance readings taken whilst turning before slowing down.
 
 //Wall readings control
-#define WALL_READINGS   4                   //Number of wall readings remembered (MAKE EVEN)
+#define WALL_READINGS   5                   //Number of wall readings remembered (MAKE 1+2^x)
+#define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1)
 #define WALL_TOLERANCE  dist2pulse(2)       //Distance +- correct distance from wall
 #define CAN_DETECT_DIST dist2pulse(10)      //Distance closer then wall
 
 //RADAR Reading control
-#define RADAR_READINGS   4
+#define RADAR_READINGS   5					//Make equal to wall readings
 #define MAX_FRONT_DETECT 1500
 
 //RADAR SCANNING
@@ -215,8 +217,8 @@ struct Infrared IR = {2, BIT3, BIT2};
 unsigned int leftWall;			//Initial distance to maintain to left wall
 unsigned int rightWall;         //Initial distance to maintain to right wall
 char turnState = STRAIGHT;				//Wall alignment turning instruction
-unsigned int  wallDistancesLeft[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 32000};	//Distance readings to left wall
-unsigned int  wallDistancesRight[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 32000};	//Distance readings to left wall
+unsigned int  wallDistancesLeft[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 65000};	//Distance readings to left wall
+unsigned int  wallDistancesRight[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 65000};	//Distance readings to left wall
 unsigned char turnStateTime = 0;					//Time spent turning to correct for wall
 
 unsigned int avgReading = 0;
@@ -606,6 +608,13 @@ void checkFlags()
         }
         wallDistancesLeft[0] = ultraLeft.distance;
 		
+		//Check whether a single reading is an outlier & if so ignore it
+		if (((wallDistancesLeft[1] >= wallDistancesLeft[2]+2000) | (wallDistancesLeft[1] <= wallDistancesLeft[2]-2000))
+			& ((wallDistancesLeft[1] >= wallDistancesLeft[0]+2000) | (wallDistancesLeft[1] <= wallDistancesLeft[0]-2000)))
+		{
+			wallDistancesLeft[1] = wallDistancesLeft[2];
+		}
+		
 		///Attend to in stateControl()
 		ultraReadLeft = 1;
 		
@@ -622,6 +631,13 @@ void checkFlags()
         }
         wallDistancesRight[0] = ultraRight.distance;
 		
+		//Check whether a single reading is an outlier & if so ignore it
+		if (((wallDistancesRight[1] >= wallDistancesRight[2]+2000) | (wallDistancesRight[1] <= wallDistancesRight[2]-2000))
+			& ((wallDistancesRight[1] >= wallDistancesRight[0]+2000) | (wallDistancesRight[1] <= wallDistancesRight[0]-2000)))
+		{
+			wallDistancesRight[1] = wallDistancesRight[2];
+		}
+		
 		///Attend to in stateControl()
 		ultraReadRight = 1;
 		
@@ -637,6 +653,13 @@ void checkFlags()
             RADARDistances[i] = RADARDistances[i - 1];
         }
         RADARDistances[0] = ultraRADAR.distance;
+
+		//Check whether a single reading is an outlier & if so ignore it
+		if (((RADARDistances[1] >= RADARDistances[2]+2000) | (RADARDistances[1] <= RADARDistances[2]-2000))
+			& ((RADARDistances[1] >= RADARDistances[0]+2000) | (RADARDistances[1] <= RADARDistances[0]-2000)))
+		{
+			RADARDistances[1] = RADARDistances[2];
+		}
 
 		///Attend to in stateControl()
 		ultraRADARRead = 1;
@@ -805,7 +828,7 @@ void stateControl()
 		//Take ultrasonic readings to wall to stay aligned and if can is past on left
 		if (ultraReadLeft)
 		{
-			findAverage(0, WALL_READINGS, wallDistancesLeft);
+			findDistanceAverage(0, WALL_READINGS, wallDistancesLeft);
 
             if(avgReading < leftWall-CAN_DETECT_DIST)
             {
@@ -825,7 +848,7 @@ void stateControl()
 		//Take forward readings to see if can is in front of car
 		if (ultraRADARRead)
 		{
-		    findAverage(0, RADAR_READINGS, RADARDistances);
+		    findDistanceAverage(0, RADAR_READINGS, RADARDistances);
 
             if(avgReading < MAX_FRONT_DETECT)
             {
@@ -900,7 +923,7 @@ void stateControl()
 		{
 			//Get an average
 			avgOldReading = avgReading;
-			findAverage(0, RADAR_READINGS, RADARDistances);
+			findDistanceAverage(0, RADAR_READINGS, RADARDistances);
 			
 			//When reading is close enough can is in front
             if(avgReading < MAX_FRONT_DETECT)
@@ -1194,7 +1217,7 @@ void RADAR()
         //Get average reading for angle set to
         readingsOnAngle = 0;
         avgOldReading = avgReading;
-        findAverage(0, RADAR_READINGS, RADARDistances);
+        findDistanceAverage(0, RADAR_READINGS, RADARDistances);
         RADARAtEachAngle[anglesChecked] = avgReading;
 
         //FIND ANOMALIES
@@ -1265,19 +1288,35 @@ void RADAR()
             }
 
             //Find closest anomaly
-            avgOldReading = 32000;
+            avgOldReading = 65000;
             //For each anomaly
-            for (readingsOnAngle =0; readingsOnAngle<anomalyNumber; readingsOnAngle++)
+            for (readingsOnAngle = 0; readingsOnAngle<anomalyNumber; readingsOnAngle++)
             {
                 //Average reading of the anomaly
-                findAverage(anomalyStart[readingsOnAngle], 1+anomalyEnd[readingsOnAngle], RADARAtEachAngle);
+				avgReading = 0;
+				avgNewReading = 0;
+				for(i=anomalyStart[readingsOnAngle];i<1+anomalyEnd[readingsOnAngle];i++)
+				{
+					avgNewReading += RADARAtEachAngle[i];
+					//If value has wrapped set to the maximum
+					if (avgNewReading < avgReading)
+					{
+						avgReading = 65000;
+						break;
+					}
+					avgReading = avgNewReading;
+				}
+				if (avgReading != 65000)
+				{
+					avgReading = avgReading/WALL_READINGS;
+				}
 
                 if (avgReading < avgOldReading)
                 {
                     avgOldReading = avgReading;
                     canAnomaly = anomalyStart[readingsOnAngle]+(anomalyEnd[readingsOnAngle]-anomalyStart[readingsOnAngle])/2;
                 }
-              }
+            }
 
             //If no anomaly
             if (anomalyStart[0] == 0)
@@ -1305,27 +1344,23 @@ void RADAR()
     }
 }
 
-void    findAverage(unsigned char start, unsigned char numOfValues, int *values)
+void    findDistanceAverage(unsigned char start, unsigned char end, int *values)
 {
     unsigned char increments = 0;
 	avgReading = 0;
 	avgNewReading = 0;
 
-	for(increments=start;increments<numOfValues;increments++, values++)
+	for(increments=start;increments<end;increments++, values++)
 	{
-		avgNewReading += *values;
+		avgNewReading += *values >> AVERAGE_SHIFT;
 
 		//If value has wrapped set to the maximum
 		if (avgNewReading < avgReading)
 		{
-			avgReading = 32000;
+			avgReading = 65000;
 			break;
 		}
 		avgReading = avgNewReading;
-	}
-	if (avgReading != 32000)
-	{
-		avgReading = avgReading/WALL_READINGS;
 	}
 }
 //==============================================================================
