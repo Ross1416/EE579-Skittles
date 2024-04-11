@@ -11,6 +11,8 @@ GEN_CMDS__FLAG :=
 
 ORDERED_OBJS += \
 "./DCMotor.obj" \
+"./IndicatorLED.obj" \
+"./Infrared.obj" \
 "./Servo.obj" \
 "./Ultrasonic.obj" \
 "./main.obj" \
@@ -144,8 +146,8 @@ CarReorganised.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "DCMotor.obj" "Servo.obj" "Ultrasonic.obj" "main.obj" 
-	-$(RM) "DCMotor.d" "Servo.d" "Ultrasonic.d" "main.d" 
+	-$(RM) "DCMotor.obj" "IndicatorLED.obj" "Infrared.obj" "Servo.obj" "Ultrasonic.obj" "main.obj" 
+	-$(RM) "DCMotor.d" "IndicatorLED.d" "Infrared.d" "Servo.d" "Ultrasonic.d" "main.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

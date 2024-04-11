@@ -27,8 +27,8 @@ extern void    servoTurn(struct Servo *servoMotor);
 extern void    servoCenter();
 
 //SERVO PWM LIMITS
-#define PWM_SERVO_UPPER   2200
-#define PWM_SERVO_LOWER   800
+#define PWM_SERVO_UPPER   2300
+#define PWM_SERVO_LOWER   700
 
 
 #endif // SERVO_H

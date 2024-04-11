@@ -10,7 +10,7 @@ Change History
 04-APR-2024 SARK created to restructure AutonomousCar project
 --------------------------------------------------------------------------------
 */
-#include "DCMotor.h"
+#include "IndicatorLED.h"
 
 void indicatorLEDSetup(struct IndicateLED *LED)
 {
@@ -24,7 +24,7 @@ void indicatorLEDSetup(struct IndicateLED *LED)
     }
 }
 
-indicatorLEDOn(struct IndicateLED *LED)
+void indicatorLEDOn(struct IndicateLED *LED)
 {
     if (LED->port == 1)
     {
@@ -36,7 +36,7 @@ indicatorLEDOn(struct IndicateLED *LED)
     }
 }
 
-indicatorLEDOff(struct IndicateLED *LED)
+void indicatorLEDOff(struct IndicateLED *LED)
 {
     if (LED->port == 1)
     {
@@ -48,7 +48,7 @@ indicatorLEDOff(struct IndicateLED *LED)
     }
 }
 
-indicatorLEDToggle(struct IndicateLED *LED)
+void indicatorLEDToggle(struct IndicateLED *LED)
 {
     if (LED->port == 1)
     {
