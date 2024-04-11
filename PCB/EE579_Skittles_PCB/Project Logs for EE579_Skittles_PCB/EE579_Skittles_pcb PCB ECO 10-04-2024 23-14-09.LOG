@@ -1,0 +1,11 @@
+Removed Pin From Net: NetName=VCC Pin=R9-1
+Removed Pin From Net: NetName=NetIC1_2 Pin=R9-2
+Removed Pin From Net: NetName=NetIC1_2 Pin=R12-1
+Removed Pin From Net: NetName=GND Pin=R12-2
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=R9
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=R12
+Add Component: Footprint Not Found 3386P_1
+Add Pin To Net: Unknown Pin: Pin R?-1
+Add Pin To Net: Unknown Pin: Pin R?-2
+Add Pin To Net: Unknown Pin: Pin R?-3
+Add Class Member: Failed to add class member : Component R? 3386P-1-103LF

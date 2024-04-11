@@ -1,0 +1,62 @@
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=J?
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=R?
+Change Component Designator: OldDesignator=J1 NewDesignator=J2
+Change Component Designator: OldDesignator=J2 NewDesignator=J5
+Change Component Designator: OldDesignator=J3 NewDesignator=J10
+Change Component Designator: OldDesignator=J4 NewDesignator=J3
+Change Component Designator: OldDesignator=J5 NewDesignator=J7
+Change Component Designator: OldDesignator=J6 NewDesignator=J17
+Change Component Designator: OldDesignator=J7 NewDesignator=J1
+Change Component Designator: OldDesignator=J8 NewDesignator=J14
+Change Component Designator: OldDesignator=J9 NewDesignator=J13
+Change Component Designator: OldDesignator=J10 NewDesignator=J16
+Change Component Designator: OldDesignator=J11 NewDesignator=J15
+Change Component Designator: OldDesignator=J? NewDesignator=J6
+Change Component Designator: OldDesignator=J? NewDesignator=J8
+Change Component Designator: OldDesignator=J? NewDesignator=J9
+Change Component Designator: OldDesignator=J? NewDesignator=J11
+Change Component Designator: OldDesignator=J? NewDesignator=J12
+Change Component Designator: OldDesignator=R1 NewDesignator=R2
+Change Component Designator: OldDesignator=R2 NewDesignator=R4
+Change Component Designator: OldDesignator=R3 NewDesignator=R7
+Change Component Designator: OldDesignator=R4 NewDesignator=R3
+Change Component Designator: OldDesignator=R6 NewDesignator=R8
+Change Component Designator: OldDesignator=R? NewDesignator=R6
+Added Component: Designator=J4(SHDR2W50P0X200_1X2_590X450X600P)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/b2b-ph-k-s-lf-sn/jst-manufacturing?region=europe"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://datasheet.lcsc.com/szlcsc/JST-Sales-America-B2B-PH-K-S-LF-SN_C131337.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "6mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "JST (JAPAN SOLDERLESS TERMINALS)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = ""; VariantName = "[No Variations]"
+Added Component: Designator=R1(RESC2012X70N)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "ERJ-PB6B3002V"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/erj-pb6b3002v/panasonic?region=nac"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://componentsearchengine.com/Datasheets/1/ERJ-PB6B3002V.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "0.7mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "Panasonic"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "ERJ-PB6B3002V"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = "667-ERJ-PB6B3002V"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = "https://www.mouser.co.uk/ProductDetail/Panasonic/ERJ-PB6B3002V?qs=eFOtW6xYNWHxFAxx7HWdpg%3D%3D"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=J4-2
+Added Pin To Net: NetName=Indicator Pin=R1-1
+Change Net Name : Old Net Name=NetJ1_3 New Net Name=NetJ2_3
+Change Net Name : Old Net Name=NetJ2_3 New Net Name=NetJ5_3
+Change Net Name : Old Net Name=NetJ3_3 New Net Name=NetJ10_3
+Change Net Name : Old Net Name=NetJ8_2 New Net Name=NetJ13_1
+Change Net Name : Old Net Name=NetJ8_3 New Net Name=NetJ13_2
+Change Net Name : Old Net Name=NetJ8_4 New Net Name=NetJ14_4
+Change Net Name : Old Net Name=NetJ8_5 New Net Name=NetJ14_5
+Added Pin To Net: NetName=NetJ4_1 Pin=J4-1
+Added Pin To Net: NetName=NetJ4_1 Pin=R1-2
+Added Net: Name=NetJ4_1
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J12 WHITE
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J13 DRIVE
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J14 61300611821
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J15 61300611821
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J16 STEER
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J17 IR
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R7 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R8 ERJ-PB6B3002V

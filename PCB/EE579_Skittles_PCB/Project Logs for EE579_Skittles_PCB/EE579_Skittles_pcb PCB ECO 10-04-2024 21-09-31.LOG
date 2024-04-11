@@ -1,0 +1,44 @@
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=J?
+Change Component Designator: OldDesignator=IC? NewDesignator=IC1
+Change Component Designator: OldDesignator=J1 NewDesignator=J2
+Change Component Designator: OldDesignator=J2 NewDesignator=J3
+Change Component Designator: OldDesignator=J3 NewDesignator=J4
+Change Component Designator: OldDesignator=J4 NewDesignator=J5
+Change Component Designator: OldDesignator=J5 NewDesignator=J6
+Change Component Designator: OldDesignator=J6 NewDesignator=J7
+Change Component Designator: OldDesignator=J7 NewDesignator=J8
+Change Component Designator: OldDesignator=J9 NewDesignator=J10
+Change Component Designator: OldDesignator=J10 NewDesignator=J11
+Change Component Designator: OldDesignator=J11 NewDesignator=J12
+Change Component Designator: OldDesignator=J12 NewDesignator=J13
+Change Component Designator: OldDesignator=J13 NewDesignator=J15
+Change Component Designator: OldDesignator=J14 NewDesignator=J19
+Change Component Designator: OldDesignator=J15 NewDesignator=J18
+Change Component Designator: OldDesignator=J? NewDesignator=J1
+Change Component Designator: OldDesignator=J? NewDesignator=J9
+Change Component Designator: OldDesignator=J? NewDesignator=J14
+Change Component Designator: OldDesignator=R5 NewDesignator=R6
+Change Component Designator: OldDesignator=R6 NewDesignator=R5
+Change Component Designator: OldDesignator=R? NewDesignator=R9
+Change Component Designator: OldDesignator=R? NewDesignator=R10
+Change Component Designator: OldDesignator=R? NewDesignator=R11
+Change Component Designator: OldDesignator=R? NewDesignator=R12
+Change Component Designator: OldDesignator=Z? NewDesignator=Z1
+Change Net Name : Old Net Name=NetIC?_1 New Net Name=NetIC1_1
+Change Net Name : Old Net Name=NetIC?_2 New Net Name=NetIC1_2
+Change Net Name : Old Net Name=NetIC?_3 New Net Name=NetIC1_3
+Change Net Name : Old Net Name=NetJ2_3 New Net Name=NetJ3_3
+Change Net Name : Old Net Name=NetJ4_1 New Net Name=NetJ5_1
+Change Net Name : Old Net Name=NetJ5_3 New Net Name=NetJ6_3
+Change Net Name : Old Net Name=NetJ10_3 New Net Name=NetJ11_3
+Change Net Name : Old Net Name=NetJ13_1 New Net Name=NetJ15_1
+Change Net Name : Old Net Name=NetJ13_2 New Net Name=NetJ15_2
+Change Net Name : Old Net Name=NetJ14_4 New Net Name=NetJ16_1
+Change Net Name : Old Net Name=NetJ14_5 New Net Name=NetJ16_2
+Change Net Name : Old Net Name=NetJ?_1 New Net Name=NetJ14_1
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J8 MSP430G2553 IC Socket
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J18 61300611821
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J19 61300611821
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R10 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R11 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R12 ERJ-PB6B3002V

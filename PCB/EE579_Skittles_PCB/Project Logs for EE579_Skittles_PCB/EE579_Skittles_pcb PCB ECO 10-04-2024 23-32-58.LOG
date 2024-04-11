@@ -1,0 +1,15 @@
+Removed Pin From Net: NetName=GND Pin=IC1-4
+Removed Pin From Net: NetName=VCC Pin=IC1-8
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=IC1
+Added Pin To Net: NetName=GND Pin=IC?-4
+Added Pin To Net: NetName=VCC Pin=IC?-8
+Added Pin To Net: NetName=NetIC?_1 Pin=IC?-1
+Added Pin To Net: NetName=NetIC?_1 Pin=R11-1
+Added Net: Name=NetIC?_1
+Added Pin To Net: NetName=NetIC?_2 Pin=IC?-2
+Added Pin To Net: NetName=NetIC?_2 Pin=R?-2
+Added Net: Name=NetIC?_2
+Added Pin To Net: NetName=NetIC?_3 Pin=IC?-3
+Added Pin To Net: NetName=NetIC?_3 Pin=R10-2
+Added Pin To Net: NetName=NetIC?_3 Pin=Z1-1
+Added Net: Name=NetIC?_3

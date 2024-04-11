@@ -1,0 +1,10 @@
+Added Component: Designator=IC?(SOP65P640X120-8N)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "TS952IPT"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/ts952ipt/stmicroelectronics"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://4donline.ihs.com/images/VipMasterIC/IC/SGST/SGST-S-A0000954157/SGST-S-A0000803870-1.pdf?hkey=52A5661711E402568146F3353EA87419"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "1.2mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "STMicroelectronics"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "TS952IPT"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = "511-TS952IP"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = "https://www.mouser.co.uk/ProductDetail/STMicroelectronics/TS952IPT?qs=FhojHmVgQovQNpIMuhf0yA%3D%3D"; VariantName = "[No Variations]"
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component IC? TS952IPT

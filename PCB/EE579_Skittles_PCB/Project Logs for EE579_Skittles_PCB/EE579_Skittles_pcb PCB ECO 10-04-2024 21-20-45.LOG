@@ -1,0 +1,6 @@
+Removed Pin From Net: NetName=GND Pin=C2-1
+Removed Pin From Net: NetName=+3.3 Pin=C2-2
+Removed Pin From Net: NetName=GND Pin=C3-1
+Removed Pin From Net: NetName=+3.3 Pin=C3-2
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=C2
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=C3

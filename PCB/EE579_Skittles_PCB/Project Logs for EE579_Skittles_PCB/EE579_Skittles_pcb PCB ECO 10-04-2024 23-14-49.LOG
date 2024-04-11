@@ -1,0 +1,12 @@
+Added Component: Designator=R?(3386P_1)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "3386P-1-103LF"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/3386p-1-103lf/bourns?region=europe"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://www.bourns.com/pdfs/3386.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "Bourns"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "3386P-1-103LF"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = "652-3386P-1-103LF"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = "https://www.mouser.co.uk/ProductDetail/Bourns/3386P-1-103LF?qs=m2uG%2FFdTAPWTJ6kNGJOVuA%3D%3D"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=R?-1
+Added Pin To Net: NetName=NetIC1_2 Pin=R?-2
+Added Pin To Net: NetName=VCC Pin=R?-3
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R? 3386P-1-103LF

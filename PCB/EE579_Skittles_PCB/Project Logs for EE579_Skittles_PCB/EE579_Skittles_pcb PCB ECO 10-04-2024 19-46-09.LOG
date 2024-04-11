@@ -1,0 +1,14 @@
+Change Component Comment : Designator=J7 Old Comment=801-87-003-10-001101 New Comment=3V3 REG
+Change Component Comment : Designator=J? Old Comment=801-87-003-10-001101 New Comment=SERVO
+Change Component Comment : Designator=J? Old Comment=B2B-PH-K-S_LF__SN_ New Comment=BLACK
+Change Component Comment : Designator=J? Old Comment=B2B-PH-K-S_LF__SN_ New Comment=START
+Change Component Comment : Designator=J4 Old Comment=B2B-PH-K-S_LF__SN_ New Comment=VIN
+Change Component Comment : Designator=J? Old Comment=B2B-PH-K-S_LF__SN_ New Comment=WHITE
+Change Component Comment : Designator=J6 Old Comment=B3B-XH-A__LF__SN_ New Comment=IR
+Change Component Comment : Designator=J? Old Comment=B3B-XH-A__LF__SN_ New Comment=MODE
+Change Component Comment : Designator=J9 Old Comment=Drive Motor New Comment=DRIVE
+Change Component Comment : Designator=J10 Old Comment=Steer Motor New Comment=STEER
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? WHITE
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? BLACK
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? START
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? SERVO

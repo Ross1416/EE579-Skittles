@@ -1,0 +1,120 @@
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=IC?
+Change Component Comment : Designator=J1 Old Comment=Ultra_A New Comment=Top Ultra
+Change Component Comment : Designator=J2 Old Comment=Ultra_B New Comment=Left Ultra
+Change Component Comment : Designator=J3 Old Comment=Ultra_C New Comment=Right Ultra
+Added Component: Designator=J?(SHDR2W50P0X200_1X2_590X450X600P)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/b2b-ph-k-s-lf-sn/jst-manufacturing?region=europe"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://datasheet.lcsc.com/szlcsc/JST-Sales-America-B2B-PH-K-S-LF-SN_C131337.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "6mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "JST (JAPAN SOLDERLESS TERMINALS)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = ""; VariantName = "[No Variations]"
+Added Component: Designator=J?(SHDR3W64P0X250_1X3_990X575X700P)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "http://www.jst-mfg.com/product/pdf/eng/eXH.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "7mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "JST (JAPAN SOLDERLESS TERMINALS)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "B3B-XH-A (LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = ""; VariantName = "[No Variations]"
+Added Component: Designator=J?(RHDR3W60P0X254_1X3_762X254X700P)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "801-87-003-10-001101"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/801-87-003-10-001101/preci-dip-sa"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "http://www.precidip.com/en/Products/PCB-Connectors/pview/801-PP-NNN-10-001101.html"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "7mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "Preci-Dip"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "801-87-003-10-001101"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = "437-8018700310001101"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = "https://www.mouser.co.uk/ProductDetail/Preci-dip/801-87-003-10-001101?qs=FtMuP6KVi2T66jAxB5rZkg%3D%3D"; VariantName = "[No Variations]"
+Added Component: Designator=J?(SHDR2W50P0X200_1X2_590X450X600P)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/b2b-ph-k-s-lf-sn/jst-manufacturing?region=europe"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://datasheet.lcsc.com/szlcsc/JST-Sales-America-B2B-PH-K-S-LF-SN_C131337.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "6mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "JST (JAPAN SOLDERLESS TERMINALS)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = ""; VariantName = "[No Variations]"
+Added Component: Designator=J?(SHDR2W50P0X200_1X2_590X450X600P)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/b2b-ph-k-s-lf-sn/jst-manufacturing?region=europe"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://datasheet.lcsc.com/szlcsc/JST-Sales-America-B2B-PH-K-S-LF-SN_C131337.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "6mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "JST (JAPAN SOLDERLESS TERMINALS)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = ""; VariantName = "[No Variations]"
+Added Component: Designator=R?(RESC2012X70N)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "ERJ-PB6B3002V"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/erj-pb6b3002v/panasonic?region=nac"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://componentsearchengine.com/Datasheets/1/ERJ-PB6B3002V.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "0.7mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "Panasonic"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "ERJ-PB6B3002V"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = "667-ERJ-PB6B3002V"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = "https://www.mouser.co.uk/ProductDetail/Panasonic/ERJ-PB6B3002V?qs=eFOtW6xYNWHxFAxx7HWdpg%3D%3D"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=DriveMotor_A Pin=J5-6
+Added Pin To Net: NetName=DriveMotor_B Pin=J5-7
+Added Pin To Net: NetName=SteerMotor_A Pin=J5-14
+Added Pin To Net: NetName=SteerMotor_B Pin=J5-15
+Added Pin To Net: NetName=VCC Pin=J?-1
+Added Pin To Net: NetName=VCC Pin=J?-1
+Added Pin To Net: NetName=GND Pin=J?-2
+Added Pin To Net: NetName=GND Pin=J?-2
+Added Pin To Net: NetName=GND Pin=J?-2
+Added Pin To Net: NetName=GND Pin=J?-2
+Added Pin To Net: NetName=GND Pin=J?-3
+Added Pin To Net: NetName=+3.3 Pin=R?-2
+Added Pin To Net: NetName=BlackBtn Pin=J5-19
+Added Pin To Net: NetName=BlackBtn Pin=J?-1
+Added Net: Name=BlackBtn
+Added Pin To Net: NetName=Indicator Pin=J5-13
+Added Net: Name=Indicator
+Added Pin To Net: NetName=IR Pin=J5-11
+Added Pin To Net: NetName=IR Pin=J6-3
+Added Net: Name=IR
+Added Pin To Net: NetName=L_UltraEcho Pin=J5-10
+Added Pin To Net: NetName=L_UltraEcho Pin=R2-1
+Added Pin To Net: NetName=L_UltraEcho Pin=R5-2
+Added Net: Name=L_UltraEcho
+Added Pin To Net: NetName=LR_UltraTrig Pin=J2-2
+Added Pin To Net: NetName=LR_UltraTrig Pin=J3-2
+Added Pin To Net: NetName=LR_UltraTrig Pin=J5-8
+Added Net: Name=LR_UltraTrig
+Added Pin To Net: NetName=ModeSwitch Pin=J5-3
+Added Pin To Net: NetName=ModeSwitch Pin=J?-2
+Added Net: Name=ModeSwitch
+Added Pin To Net: NetName=R_UltraEcho Pin=J5-9
+Added Pin To Net: NetName=R_UltraEcho Pin=R3-1
+Added Pin To Net: NetName=R_UltraEcho Pin=R6-2
+Added Net: Name=R_UltraEcho
+Added Pin To Net: NetName=SBWTCK Pin=J5-17
+Added Net: Name=SBWTCK
+Added Pin To Net: NetName=SBWTDIO Pin=J5-16
+Added Pin To Net: NetName=SBWTDIO Pin=R?-1
+Added Net: Name=SBWTDIO
+Added Pin To Net: NetName=Servo Pin=J5-12
+Added Pin To Net: NetName=Servo Pin=J?-3
+Added Net: Name=Servo
+Added Pin To Net: NetName=StartBtn Pin=J5-5
+Added Pin To Net: NetName=StartBtn Pin=J?-1
+Added Net: Name=StartBtn
+Added Pin To Net: NetName=Top_UltraEcho Pin=J5-4
+Added Pin To Net: NetName=Top_UltraEcho Pin=R1-1
+Added Pin To Net: NetName=Top_UltraEcho Pin=R4-2
+Added Net: Name=Top_UltraEcho
+Added Pin To Net: NetName=Top_UltraTrig Pin=J1-2
+Added Pin To Net: NetName=Top_UltraTrig Pin=J5-2
+Added Net: Name=Top_UltraTrig
+Added Pin To Net: NetName=WhiteBtn Pin=J5-18
+Added Pin To Net: NetName=WhiteBtn Pin=J?-1
+Added Net: Name=WhiteBtn
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? B2B-PH-K-S_LF__SN_
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? B3B-XH-A__LF__SN_
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? 801-87-003-10-001101
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? B2B-PH-K-S_LF__SN_
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? B2B-PH-K-S_LF__SN_
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R? ERJ-PB6B3002V

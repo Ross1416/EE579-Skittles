@@ -1,0 +1,12 @@
+Added Component: Designator=J?(HDRV4W64P0X254_1X4_1016X250X901P)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "PH1-04-UA"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/ph1-04-ua/adam-tech?region=nac"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://datasheet.datasheetarchive.com/originals/distributors/Datasheets_SAMA/22522227e000bb8d8f26a3580c1bb98b.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "9.008mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "Adam Tech"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "PH1-04-UA"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = "737-PH1-04-UA"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = "https://www.mouser.co.uk/ProductDetail/Adam-Tech/PH1-04-UA?qs=HoCaDK9Nz5fnp3pp8iwrSQ%3D%3D"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=+3.3 Pin=J?-1
+Added Pin To Net: NetName=GND Pin=J?-2
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? PH1-04-UA

@@ -1,0 +1,37 @@
+Removed Pin From Net: NetName=VCC Pin=J6-1
+Removed Pin From Net: NetName=GND Pin=J6-2
+Removed Pin From Net: NetName=DriveMotor_A Pin=J7-6
+Removed Pin From Net: NetName=DriveMotor_B Pin=J7-7
+Removed Pin From Net: NetName=VCC Pin=J8-1
+Removed Pin From Net: NetName=ModeSwitch Pin=J8-2
+Removed Pin From Net: NetName=GND Pin=J8-3
+Removed Pin From Net: NetName=SteerMotor_B Pin=J15-1
+Removed Pin From Net: NetName=SteerMotor_A Pin=J15-2
+Removed Pin From Net: NetName=GND Pin=J15-3
+Removed Pin From Net: NetName=VCC Pin=J15-4
+Removed Pin From Net: NetName=DriveMotor_B Pin=J15-5
+Removed Pin From Net: NetName=DriveMotor_A Pin=J15-6
+Removed Member From Class: ClassName=EE579_Skittles_sch Member=J8
+Change Component Comment : Designator=J9 Old Comment=START New Comment=MODE
+Added Component: Designator=J?(SHDR2W50P0X200_1X2_590X450X600P)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/b2b-ph-k-s-lf-sn/jst-manufacturing?region=europe"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://datasheet.lcsc.com/szlcsc/JST-Sales-America-B2B-PH-K-S-LF-SN_C131337.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "6mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "JST (JAPAN SOLDERLESS TERMINALS)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "B2B-PH-K-S(LF)(SN)"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = ""; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=J6-1
+Added Pin To Net: NetName=VCC Pin=J6-2
+Added Pin To Net: NetName=DriveMotor_B Pin=J7-6
+Added Pin To Net: NetName=DriveMotor_A Pin=J7-7
+Added Pin To Net: NetName=DriveMotor_B Pin=J15-1
+Added Pin To Net: NetName=DriveMotor_A Pin=J15-2
+Added Pin To Net: NetName=VCC Pin=J15-3
+Added Pin To Net: NetName=GND Pin=J15-4
+Added Pin To Net: NetName=SteerMotor_B Pin=J15-5
+Added Pin To Net: NetName=SteerMotor_A Pin=J15-6
+Added Pin To Net: NetName=ModeSwitch Pin=J?-1
+Added Pin To Net: NetName=GND Pin=J?-2
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J? START

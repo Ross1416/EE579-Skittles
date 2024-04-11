@@ -1,0 +1,39 @@
+Added Component: Designator=C2(CAPC2012X135N)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = "CL21B105KPFNNNE"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = "https://www.arrow.com/en/products/cl21b105kpfnnne/samsung-electro-mechanics?region=nac"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://datasheet.datasheetarchive.com/originals/distributors/Datasheets_SAMA/2d87a2a5c85914a1c305fff6363ab8b8.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "1.35mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "SAMSUNG"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "CL21B105KPFNNNE"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = "187-CL21B105KPFNNNE"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = "https://www.mouser.co.uk/ProductDetail/Samsung-Electro-Mechanics/CL21B105KPFNNNE?qs=349EhDEZ59rb3V94UrmRdQ%3D%3D"; VariantName = "[No Variations]"
+Added Component: Designator=C3(CAPC2012X95N)
+Add component (AddParameter): Name = "Arrow Part Number"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Arrow Price/Stock"; Value = ""; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Datasheet Link"; Value = "https://www.yageo.com/upload/media/product/productsearch/datasheet/mlcc/UPY-GPHC_X7R_6.3V-to-250V_22.pdf"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Height"; Value = "0.95mm"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Name"; Value = "YAGEO"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Manufacturer_Part_Number"; Value = "CC0805KPX7R9BB104"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Part Number"; Value = "603-CC805KPX7R9BB104"; VariantName = "[No Variations]"
+Add component (AddParameter): Name = "Mouser Price/Stock"; Value = "https://www.mouser.co.uk/ProductDetail/YAGEO/CC0805KPX7R9BB104?qs=vTakOoo5QyLPWGiom%252Bf2Ug%3D%3D"; VariantName = "[No Variations]"
+Added Pin To Net: NetName=GND Pin=C2-1
+Added Pin To Net: NetName=+3.3 Pin=C2-2
+Added Pin To Net: NetName=GND Pin=C3-1
+Added Pin To Net: NetName=+3.3 Pin=C3-2
+Added Pin To Net: NetName=VCC Pin=J2-1
+Added Pin To Net: NetName=VCC Pin=J5-1
+Added Pin To Net: NetName=VCC Pin=J10-1
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component C2 CL21B105KPFNNNE
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component C3 CC0805KPX7R9BB104
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J4 IND
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J5 Left Ultra
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J6 SERVO
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J7 MSP430G2553 IC Socket
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J8 MODE
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J9 START
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J10 Right Ultra
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component J11 BLACK
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R1 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R2 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R4 ERJ-PB6B3002V
+Added Member To Class: ClassName=EE579_Skittles_sch Member=Component R6 ERJ-PB6B3002V
