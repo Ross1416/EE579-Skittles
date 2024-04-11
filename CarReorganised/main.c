@@ -118,6 +118,7 @@ void    timeIncrement(struct Time *time, int sec, int ms);
 void    alignToWall();
 void	RADAR();
 void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int *values);
+void    changingState();
 
 //==============================================================================
 // MACROs
@@ -138,14 +139,17 @@ void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int
 
 //Car States
 #define START       	0
-#define SEARCH      	1
-#define CAN_ALIGN   	2
-#define RADAR_SCAN  	3
-#define CAN_APPROACH	4
-#define COLOUR_DETECT 	5
-#define CAN_HIT			6
-#define CAN_AVOID		7
-#define STOP        	8
+#define SPRINT          1
+#define SEARCH      	2
+#define CAN_ALIGN   	3
+#define RADAR_SCAN  	4
+#define CAN_APPROACH	5
+#define COLOUR_DETECT 	6
+#define REVERSE_CAN     7
+#define CAN_HIT			8
+#define CAN_AVOID		9
+#define WALL_REALIGN    10
+#define STOP        	11
 
 //Wall alignment
 #define STRAIGHT    	0
@@ -184,7 +188,19 @@ void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int
 #define MAX_RADAR_DISTANCE          dist2pulse(50)
 
 //CAN APPROACH
-#define FACE_CAN_TOLERANCE          200
+#define FACE_CAN_TOLERANCE          320
+
+//REVERSE TIME FOR RUN UP TO CAN
+#define REVERSE_TIME   500
+#define REVERSE_SPEED  0.6
+
+//HIT CAN
+#define HIT_TIME   900
+
+//AVOID CAN
+#define AVOID_TIME   800
+#define AVOID_SPEED  0.8
+
 
 
 //==============================================================================
@@ -253,6 +269,7 @@ unsigned int newAngle;
 
 //Approaching can variables
 unsigned char lostCan = 0;
+unsigned int  lostCount = 0;
 unsigned int  avgAnomalyDistance = 64000;
 unsigned int  expectedCanDistance = 64000;
 unsigned int  avgNewAnomalyDistance = 64000;
@@ -727,105 +744,8 @@ void checkFlags()
         previousState = state;
         state = nextState;
 		
-		//Events to occur when changing to each state
-		if (state == START)
-		{
-			fillBufferCount = 0;
-		}
-        else if (state == SEARCH)
-        {
-            //Start driving forward
-            motorDrive.direction = FORWARD;
-            flag.motorDrive = 1;
-
-            //Centre RADAR
-            servoCenter();
-
-            //Initiate first ultrasonic reading
-            ultrasonicTrigger(&ultraLeft);
-        }
-        else if (state == CAN_ALIGN)
-        {
-			motorDrive.direction = BACK;
-            motorDrive.pwm.aMs = 0.6*MOTOR_PWM_PERIOD;
-            flag.motorDrive = 1;
-
-            motorSteer.direction = RIGHT;
-            flag.motorSteer = 1;
-			
-			nextState = RADAR_SCAN;
-			timeIncrement(&Schedule.stateChange, 0, ALIGNMENT_TIME);
-        }
-        else if (state == RADAR_SCAN)
-        {
-			//Clear variables used in state
-			readingsOnAngle = 0;
-			anglesChecked = 0;
-			newAngle = 0;
-			anomalyNumber = 0;
-			canAnomaly = 0;
-			
-			for (i=0; i<NUMBER_OF_ANGLES_CHECKED; i++)
-			{
-			    anomalyStart[i] = 0;
-			    anomalyEnd[i] = 0;
-				anomalyPositions[i] = 0;
-				RADARAtEachAngle[i] = 0;
-			}
-			
-			//Prepare servo to turn anti-clockwise
-			servoRADAR.direction = 1;
-			
-			//Stop driving
-			motorDrive.direction = OFF;
-			motorSteer.direction = STRAIGHT;
-			flag.motorDrive = 1;
-			flag.motorSteer = 1;
-			
-			//Rotate servo full clockwise
-            TA1CCR2 = PWM_SERVO_LOWER;
-			
-			//Start first reading in a second when servo has turned
-			timeIncrement(&Schedule.ultraRADARStart, 1, 0);
-        }
-		else if (state == CAN_APPROACH)
-		{
-			motorDrive.pwm.aMs = 0.3*MOTOR_PWM_PERIOD;
-			motorDrive.direction = FORWARD;
-			flag.motorDrive = 1;
-			
-			lostCan = 0;
-			
-			timeIncrement(&Schedule.ultraRADARStart, 0, 20);
-		}
-		else if (state == COLOUR_DETECT)
-		{
-		    // Check IR sensor - get colour
-            IRRead(&IR);
-
-            // Decide HIT or AVOID depending on BLACK or WHITE can
-            if (IR.colour)
-            {
-                // Hit can if BLACK
-                nextState = CAN_HIT;
-                flag.stateChange = 1;
-                indicatorLEDOn(&LEDTop);
-            }
-            else
-            {
-                // Avoid can if WHITE
-                nextState = CAN_AVOID;
-                flag.stateChange = 1;
-                indicatorLEDOff(&LEDTop);
-            }
-		}
-        else if (state == STOP)
-        {
-        }
-        else
-        {
-            //state = START;
-        }
+		changingState();
+		
         flag.stateChange = 0;
     }
 }
@@ -975,82 +895,109 @@ void stateControl()
 			findDistanceAverage(1, RADAR_READINGS, RADARDistances);
 			
 			//When reading is close enough can is in front
-            if(avgReading < MAX_FRONT_DETECT-300)
+            if(avgReading < 500)
             {
-                if ((TA1CCR2 < 1500 - FACE_CAN_TOLERANCE) || (TA1CCR2 > 1500 + FACE_CAN_TOLERANCE))   //If not facing can
+                indicatorLEDOff(&LEDTop);
+                if ((TA1CCR2 > 1500-FACE_CAN_TOLERANCE) && (TA1CCR2 < 1500+FACE_CAN_TOLERANCE))   //If facing can
                 {
-                    //distToCan = avgReading;
-                    //angleToCan = TA1CCR2;
-                    nextState = CAN_ALIGN;
-                    flag.stateChange = 1;
-                }
-                else
-                {
-                    //Stop driving
+					//Stop driving
                     motorDrive.direction = OFF;
                     motorSteer.direction = STRAIGHT;
                     flag.motorDrive = 1;
                     flag.motorSteer = 1;
 
-                    indicatorLEDOff(&LEDTop);
                     nextState = COLOUR_DETECT;
+                    flag.stateChange = 1;
+                }
+                else
+                {
+                    nextState = CAN_ALIGN;
                     flag.stateChange = 1;
                 }
             }
 			
-			//Determine whether can is being looked at
+			//Behaviours whether can is lost
 			if (lostCan)	//If can is lost
 			{
 				if (avgReading < expectedCanDistance+300)	//Can refound
 				{
+				    motorDrive.direction = FORWARD;
+				    flag.motorDrive = 1;
+
 				    expectedCanDistance = avgReading;
 					lostCan = 0;
+					lostCount = 0;
+
+					indicatorLEDOn(&LEDTop);
+					timeIncrement(&Schedule.ultraRADARStart, 0, 20);
+				}
+				else	//Can still lost
+				{
+				    lostCan = 1;
+				    motorDrive.direction = OFF;
+				    flag.motorDrive = 1;
+
+				    if (lostCount == 2)
+				    {
+				        servoRADAR.direction ^= 1;
+				    }
+				    else if (lostCount == 6)
+				    {
+				        servoRADAR.direction ^= 1;
+				    }
+				    else if (lostCount > 6)
+					{
+					    nextState = RADAR_SCAN;
+					    flag.stateChange = 1;
+					}
+
+					indicatorLEDOff(&LEDTop);
+					servoTurn(&servoRADAR);
+					timeIncrement(&Schedule.ultraRADARStart, 0, 200);
+					lostCount++;
 				}
 			}
 			else	//If can is not lost
 			{
-				if (avgReading > expectedCanDistance+100)	//Now lost
+				if (avgReading > expectedCanDistance+200)	//Now lost
 				{
 					lostCan = 1;
-					motorDrive.direction = FORWARD;
+					motorDrive.direction = OFF;
+					flag.motorDrive = 1;
 					
-					if (motorSteer.direction == RIGHT)
+					if (TA1CCR2 >= 1500)
 					{
 						servoRADAR.direction = 0;
 					}
-					else if  (motorSteer.direction == LEFT)
+					else if  (TA1CCR2 < 1500)
 					{
 						servoRADAR.direction = 1;
 					}
 					else
 					{
-						//nextState = RADAR_SCAN;
-						//flag.stateChange = 1;
+					    /*
+						nextState = RADAR_SCAN;
+						flag.stateChange = 1;*/
 					}
-				}
-				else    //Still not lost
-				{
-				    expectedCanDistance = avgReading; //Update latest distance to can
-				}
-			}
-			
-			if (lostCan)
-			{
-			    indicatorLEDOff(&LEDTop);
-			    if ((TA1CCR2 == PWM_SERVO_UPPER) || (TA1CCR2 == PWM_SERVO_LOWER))
-			    {
-			        nextState = RADAR_SCAN;
-			        flag.stateChange = 1;
-			    }
-				servoTurn(&servoRADAR);
-				timeIncrement(&Schedule.ultraRADARStart, 0, 200);
-			}
-			else
-			{
-			    indicatorLEDOn(&LEDTop);
-				timeIncrement(&Schedule.ultraRADARStart, 0, 20);
-			}
 
+                    indicatorLEDOff(&LEDTop);
+                    servoTurn(&servoRADAR);
+                    timeIncrement(&Schedule.ultraRADARStart, 0, 200);
+                    lostCount = 1;
+				}
+				else    //Still looking at can
+				{
+				    lostCan = 0;
+				    lostCount = 0;
+				    motorDrive.direction = FORWARD;
+				    flag.motorDrive = 1;
+
+				    expectedCanDistance = avgReading; //Update latest distance to can
+
+				    indicatorLEDOn(&LEDTop);
+					timeIncrement(&Schedule.ultraRADARStart, 0, 20);
+				}
+			}
 			ultraRADARRead = 0;
 		}
 
@@ -1065,6 +1012,8 @@ void stateControl()
 //DETECT COLOUR========================================================================
     if (state == COLOUR_DETECT)
     {
+        //Functionality done when changing to state
+
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
         if (buttonPressed)
         {
@@ -1076,10 +1025,6 @@ void stateControl()
 //HIT CAN IF BLACK========================================================================
     if (state == CAN_HIT)
     {
-        motorDrive.direction = FORWARD;
-        flag.motorDrive = 1;
-
-
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
         if (buttonPressed)
         {
@@ -1091,10 +1036,6 @@ void stateControl()
 //AVOID CAN IF WHITE======================================================================
     if (state == CAN_AVOID)
     {
-        motorDrive.direction = BACK;
-        flag.motorDrive = 1;
-
-
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
         if (buttonPressed)
         {
@@ -1113,14 +1054,6 @@ void stateControl()
 	        state = START;
 	        buttonPressed = 0;
 	    }
-		
-	    indicatorLEDOff(&LEDTop);
-
-		//Stop all motors and readings
-		motorDrive.direction = OFF;
-		motorSteer.direction = STRAIGHT;
-        flag.motorDrive = 1;
-        flag.motorSteer = 1;
 	}
 
 }
@@ -1419,6 +1352,177 @@ void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int
 			break;
 		}
 		avgReading = avgNewReading;
+	}
+}
+
+//Events to occur when changing to each state
+void    changingState()
+{
+	if (state == START)
+	{
+		//Count for wall buffer
+		fillBufferCount = 0;
+	}
+	
+	if (state == SPRINT)
+	{
+		
+	}
+	
+	if (state == SEARCH)
+	{
+		//Start driving forward
+		motorDrive.direction = FORWARD;
+		flag.motorDrive = 1;
+
+		//Centre RADAR
+		servoCenter();
+
+		//Initiate first ultrasonic reading
+		ultrasonicTrigger(&ultraLeft);
+	}
+	
+	if (state == CAN_ALIGN)
+	{
+		motorDrive.direction = BACK;
+		motorDrive.pwm.aMs = 0.6*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = RIGHT;
+		flag.motorSteer = 1;
+		
+		nextState = RADAR_SCAN;
+		timeIncrement(&Schedule.stateChange, 0, ALIGNMENT_TIME);
+	}
+	
+	if (state == RADAR_SCAN)
+	{
+		//Clear variables used in state
+		readingsOnAngle = 0;
+		anglesChecked = 0;
+		newAngle = 0;
+		anomalyNumber = 0;
+		canAnomaly = 0;
+		
+		for (i=0; i<NUMBER_OF_ANGLES_CHECKED; i++)
+		{
+			anomalyStart[i] = 0;
+			anomalyEnd[i] = 0;
+			anomalyPositions[i] = 0;
+			RADARAtEachAngle[i] = 0;
+		}
+		
+		//Prepare servo to turn anti-clockwise
+		servoRADAR.direction = 1;
+		
+		//Stop driving
+		motorDrive.direction = OFF;
+		motorSteer.direction = STRAIGHT;
+		flag.motorDrive = 1;
+		flag.motorSteer = 1;
+		
+		//Rotate servo full clockwise
+		TA1CCR2 = PWM_SERVO_LOWER;
+		
+		//Start first reading in a second when servo has turned
+		timeIncrement(&Schedule.ultraRADARStart, 1, 0);
+	}
+	
+	if (state == CAN_APPROACH)
+	{
+		motorDrive.pwm.aMs = 0.3*MOTOR_PWM_PERIOD;
+		motorDrive.direction = FORWARD;
+		flag.motorDrive = 1;
+		
+		lostCan = 0;
+		lostCount = 0;
+		
+		timeIncrement(&Schedule.ultraRADARStart, 0, 20);
+	}
+	
+	if (state == COLOUR_DETECT)
+	{
+		// Check IR sensor - get colour
+		IRRead(&IR);
+
+		// Decide HIT or AVOID depending on BLACK or WHITE can
+		if (IR.colour)
+		{
+			// Hit can if BLACK
+			nextState = REVERSE_CAN;
+			flag.stateChange = 1;
+			indicatorLEDOn(&LEDTop);
+		}
+		else
+		{
+			// Avoid can if WHITE
+			nextState = CAN_AVOID;
+			flag.stateChange = 1;
+			indicatorLEDOff(&LEDTop);
+		}
+	}
+	
+	if (state == REVERSE_CAN)
+	{
+		motorDrive.direction = BACK;
+		motorDrive.pwm.aMs = REVERSE_SPEED*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = STRAIGHT;
+		flag.motorSteer = 1;
+		
+		nextState = CAN_HIT;
+		timeIncrement(&Schedule.stateChange, 0, REVERSE_TIME);
+	}
+	
+	if (state == CAN_HIT)
+	{
+		motorDrive.direction = FORWARD;
+		motorDrive.pwm.aMs = MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = STRAIGHT;
+		flag.motorSteer = 1;
+		
+		nextState = WALL_REALIGN;
+		timeIncrement(&Schedule.stateChange, 0, HIT_TIME);
+	}
+	
+	if (state == CAN_AVOID)
+	{
+		motorDrive.direction = BACK;
+		motorDrive.pwm.aMs = AVOID_SPEED*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = LEFT;
+		flag.motorSteer = 1;
+		
+		nextState = SEARCH;
+		timeIncrement(&Schedule.stateChange, 0, AVOID_TIME);
+	}
+	
+	if (state == WALL_REALIGN)
+	{
+		motorDrive.direction = BACK;
+		motorDrive.pwm.aMs = AVOID_SPEED*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = LEFT;
+		flag.motorSteer = 1;
+		
+		nextState = SEARCH;
+		timeIncrement(&Schedule.stateChange, 0, AVOID_TIME);
+	}
+	
+	if (state == STOP)
+	{
+		indicatorLEDOff(&LEDTop);
+
+		//Stop all motors and readings
+		motorDrive.direction = OFF;
+		motorSteer.direction = STRAIGHT;
+        flag.motorDrive = 1;
+        flag.motorSteer = 1;
 	}
 }
 //==============================================================================
