@@ -10,6 +10,7 @@ CMD_SRCS += \
 
 C_SRCS += \
 ../DCMotor.c \
+../IndicatorLED.c \
 ../Infrared.c \
 ../Servo.c \
 ../Ultrasonic.c \
@@ -17,6 +18,7 @@ C_SRCS += \
 
 C_DEPS += \
 ./DCMotor.d \
+./IndicatorLED.d \
 ./Infrared.d \
 ./Servo.d \
 ./Ultrasonic.d \
@@ -24,6 +26,7 @@ C_DEPS += \
 
 OBJS += \
 ./DCMotor.obj \
+./IndicatorLED.obj \
 ./Infrared.obj \
 ./Servo.obj \
 ./Ultrasonic.obj \
@@ -31,6 +34,7 @@ OBJS += \
 
 OBJS__QUOTED += \
 "DCMotor.obj" \
+"IndicatorLED.obj" \
 "Infrared.obj" \
 "Servo.obj" \
 "Ultrasonic.obj" \
@@ -38,6 +42,7 @@ OBJS__QUOTED += \
 
 C_DEPS__QUOTED += \
 "DCMotor.d" \
+"IndicatorLED.d" \
 "Infrared.d" \
 "Servo.d" \
 "Ultrasonic.d" \
@@ -45,6 +50,7 @@ C_DEPS__QUOTED += \
 
 C_SRCS__QUOTED += \
 "../DCMotor.c" \
+"../IndicatorLED.c" \
 "../Infrared.c" \
 "../Servo.c" \
 "../Ultrasonic.c" \

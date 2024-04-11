@@ -4,13 +4,14 @@
 
 SHELL = cmd.exe
 
-CG_TOOL_ROOT := C:/ti/ccs1220/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS
+CG_TOOL_ROOT := C:/ti/ccs1240/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS
 
 GEN_OPTS__FLAG := 
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
 "./DCMotor.obj" \
+"./IndicatorLED.obj" \
 "./Infrared.obj" \
 "./Servo.obj" \
 "./Ultrasonic.obj" \
@@ -138,15 +139,15 @@ all: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 CarReorganised.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 	@echo 'Building target: "$@"'
 	@echo 'Invoking: MSP430 Linker'
-	"C:/ti/ccs1220/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"CarReorganised.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1220/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1220/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1220/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="CarReorganised_linkInfo.xml" --use_hw_mpy=none --rom_model -o "CarReorganised.out" $(ORDERED_OBJS)
+	"C:/ti/ccs1240/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"CarReorganised.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1240/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1240/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1240/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="CarReorganised_linkInfo.xml" --use_hw_mpy=none --rom_model -o "CarReorganised.out" $(ORDERED_OBJS)
 	@echo 'Finished building target: "$@"'
 	@echo ' '
 
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "DCMotor.obj" "Infrared.obj" "Servo.obj" "Ultrasonic.obj" "main.obj" 
-	-$(RM) "DCMotor.d" "Infrared.d" "Servo.d" "Ultrasonic.d" "main.d" 
+	-$(RM) "DCMotor.obj" "IndicatorLED.obj" "Infrared.obj" "Servo.obj" "Ultrasonic.obj" "main.obj" 
+	-$(RM) "DCMotor.d" "IndicatorLED.d" "Infrared.d" "Servo.d" "Ultrasonic.d" "main.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

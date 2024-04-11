@@ -80,16 +80,16 @@ void ultrasonicTrigger(struct Ultrasonic *ultra)
 	if (ultra->port == 2)
 	{
 		//Set capture compare to the ultrasonic being used
-		//if (ultra->echoPin == BIT2) //Capture compare input B
-		//{
-		  // TA1CCTL1 &= ~CCIS_3;
-			//TA1CCTL1 |= CCIS_1;
-		//}
-		//else if (ultra->echoPin == BIT1) //Capture compare input A
-		//{
-		//    TA1CCTL1 &= ~CCIS_3;
-		//	TA1CCTL1 |= CCIS_0;
-		//}
+		if (ultra->echoPin == BIT2) //Capture compare input B
+		{
+		   TA1CCTL1 &= ~CCIS_3;
+			TA1CCTL1 |= CCIS_1;
+		}
+		else if (ultra->echoPin == BIT1) //Capture compare input A
+		{
+		    TA1CCTL1 &= ~CCIS_3;
+			TA1CCTL1 |= CCIS_0;
+		}
 
 		//Trigger the ultrasonic
 		P2OUT |= ultra->trigPin;

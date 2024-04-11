@@ -21,6 +21,8 @@ Change History
 07-APR-2024 SARK added RADAR scan to lock on to car
 08-APR-2024 SARK fixed bug with ultrasonic readings and timer overflows
 08-APR-2024 SARK added code for car to approach can
+09-APR-2024 SARK added right ultrasonic code
+09-APR-2024 RI added AL's IR sensor functionality
 --------------------------------------------------------------------------------
 */
 
@@ -34,6 +36,7 @@ Change History
 #include "DCMotor.h"
 #include "Servo.h"
 #include "Ultrasonic.h"
+#include "IndicatorLED.h"
 #include "Infrared.h"
 
 //==============================================================================
@@ -64,7 +67,8 @@ struct flags {
     char motorSteer;
 
     //To read ultrasonic when result available
-    char ultraWallRead;
+    char ultraLeftRead;
+	char ultraRightRead;
     char ultraRADARRead;
 };
 
@@ -75,7 +79,7 @@ struct Scheduler {
 
     //Time to start an ultrasonic reading
     struct Time ultraLeftStart;
-	//struct Time ultraRightStart;
+	struct Time ultraRightStart;
 	struct Time ultraRADARStart;
 
     //Time at which car state should change
@@ -92,6 +96,8 @@ struct Scheduler {
 //Interrupt Service Routines
 __interrupt void Port1_ISR(void);
 __interrupt void Timer0_A0_ISR(void);
+__interrupt void Timer0_A1_ISR(void);
+__interrupt void Timer1_A0_ISR (void);
 __interrupt void Timer1_A1_ISR (void);
 
 //Main body of code
@@ -111,6 +117,8 @@ void    timeIncrement(struct Time *time, int sec, int ms);
 //Other Functionality
 void    alignToWall();
 void	RADAR();
+void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int *values);
+void    changingState();
 
 //==============================================================================
 // MACROs
@@ -131,31 +139,23 @@ void	RADAR();
 
 //Car States
 #define START       	0
-#define SEARCH      	1
-#define CAN_ALIGN   	2
-#define RADAR_SCAN  	3
-#define CAN_APPROACH	4
-#define COLOUR_DETECT 	5
-#define CAN_HIT			6
-#define CAN_AVOID		7
-#define STOP        	8
+#define SPRINT          1
+#define SEARCH      	2
+#define CAN_ALIGN   	3
+#define RADAR_SCAN  	4
+#define CAN_APPROACH	5
+#define COLOUR_DETECT 	6
+#define REVERSE_CAN     7
+#define CAN_HIT			8
+#define CAN_AVOID		9
+#define WALL_REALIGN    10
+#define STOP        	11
 
 //Wall alignment
 #define STRAIGHT    	0
 #define AWAY        	1
 #define CLOSE       	2
 #define STRAIGHTEN  	3
-
-//RGB colours (P2OUT |= RGB_XX;)
-//RGB off command: (P2OUT &= ~0x2A;)
-#define RGB_RED     0x02
-#define RGB_GREEN   0x08
-#define RGB_BLUE    0x20
-#define RGB_PURPLE  0x22
-#define RGB_CYAN    0x28
-#define RGB_YELLOW  0xA
-#define RGB_WHITE   0x2A
-
 
 //==============================================================================
 // CHANGEABLE SETTINGS MACROs
@@ -164,70 +164,97 @@ void	RADAR();
 #define TIMER_INC_MS    2           //Scheduler interrupts period (2 ms)
 
 //Drive Speeds
-#define MOTOR_PWM_PERIOD    50                     //PWM period of motors.
-#define SPEED_TOP           0.4*MOTOR_PWM_PERIOD      //Top speed of the motors as percentage of PWM.
+#define MOTOR_PWM_PERIOD    50                      //PWM period of motors.
+#define SPEED_TOP           0.4*MOTOR_PWM_PERIOD    //Top speed of the motors as percentage of PWM.
 #define SPEED_SLOW          0.3*MOTOR_PWM_PERIOD    //Slower speed when changing direction.
-#define READINGS_TO_SPEED_CHANGE    5                      //Number of distance readings taken whilst turning before slowing down.
+#define READINGS_TO_SPEED_CHANGE    5               //Number of distance readings taken whilst turning before slowing down.
 
 //Wall readings control
-#define WALL_READINGS   4                   //Number of wall readings remembered (MAKE EVEN)
+#define WALL_READINGS   5                   //Number of wall readings remembered (MAKE 1+2^x)
+#define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1)
 #define WALL_TOLERANCE  dist2pulse(2)       //Distance +- correct distance from wall
 #define CAN_DETECT_DIST dist2pulse(10)      //Distance closer then wall
 
+//Time to align to can
+#define ALIGNMENT_TIME   850
+
 //RADAR Reading control
-#define RADAR_READINGS   5
+#define RADAR_READINGS   5					//Make equal to wall readings
 #define MAX_FRONT_DETECT 1500
+#define ANOMALY_DISTANCE 500
 
 //RADAR SCANNING
 #define NUMBER_OF_ANGLES_CHECKED    15
 #define MAX_RADAR_DISTANCE          dist2pulse(50)
 
+//CAN APPROACH
+#define FACE_CAN_TOLERANCE          320
+
+//REVERSE TIME FOR RUN UP TO CAN
+#define REVERSE_TIME   500
+#define REVERSE_SPEED  0.6
+
+//HIT CAN
+#define HIT_TIME   900
+
+//AVOID CAN
+#define AVOID_TIME   800
+#define AVOID_SPEED  0.8
+
+
 
 //==============================================================================
 // Global Variable Initialisation
 //------------------------------------------------------------------------------
-//Scheduling info
+//Scheduling variables
 struct Time currentTime     =   {0, 0};    //Running count of time
-struct Scheduler Schedule   =   {0};       //Schedule when events needing attended
-struct flags flag           =   {0};       //Flag when something ready to be attended
+struct Scheduler Schedule   =   {0};       //Schedule when events should
+struct flags flag           =   {0};       //Flag when something needed to be attended
 
 //What car should be doing
 char previousState  =   START;
 char state          =   START;
 char nextState      =   START;
 
-//DC Motor info (On Port 1)
+//Indicator LED (Port 2)
+struct IndicateLED LEDTop = {2, BIT5};
+
+//DC Motor info (Port 1)
 struct MotorDC motorDrive = {0, BIT5, BIT4, {0, MOTOR_PWM_PERIOD, 0, SPEED_TOP, 1}};
 struct MotorDC motorSteer = {0, BIT6, BIT7, {0, MOTOR_PWM_PERIOD, 0, MOTOR_PWM_PERIOD, 1}};
 
 //Wall Ultrasonic info (Port 2)
 struct Ultrasonic ultraLeft = {0, {0, 0}, 0, BIT0, BIT2, 2};
-//struct Ultrasonic ultraRight = {0, {0, 0}, 0, BIT0, BIT1, 2};
+struct Ultrasonic ultraRight = {0, {0, 0}, 0, BIT0, BIT1, 2};
 
 //RADAR Ultrasonic info (Port 1)
 struct Ultrasonic ultraRADAR = {0, {0, 0}, 0, BIT0, BIT2, 1};
 
 //Servo info (Port 2)
-struct Servo servoA = {BIT4, (PWM_SERVO_UPPER-PWM_SERVO_LOWER)/NUMBER_OF_ANGLES_CHECKED, 0};    //PWM on Port 2.4, angle to be turned, initially turn anti-clockwise
+struct Servo servoRADAR = {BIT4, (PWM_SERVO_UPPER-PWM_SERVO_LOWER)/NUMBER_OF_ANGLES_CHECKED, 0};
 
 // IR info (Port 2)
 struct Infrared IR = {2, BIT3, BIT2};
 
 //Wall alignment info
-volatile int leftWall;			//Initial distance to maintain to left wall
-//volatile int rightWall;          //Initial distance to maintain to right wall
+unsigned int leftWall;			//Initial distance to maintain to left wall
+unsigned int rightWall;         //Initial distance to maintain to right wall
 char turnState = STRAIGHT;				//Wall alignment turning instruction
-int  wallDistances[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 2000};	//Distance readings to wall
+unsigned int  wallDistancesLeft[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 0};	//Distance readings to left wall
+unsigned int  wallDistancesRight[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 0};	//Distance readings to left wall
 unsigned char turnStateTime = 0;					//Time spent turning to correct for wall
-int avgReading = 0;
-int avgOldReading = 0;
-//int avgNewReading = 0;
 
-int RADARDistances[RADAR_READINGS] = {[0 ... RADAR_READINGS-1] = 2000};
+unsigned int avgReading = 0;
+unsigned int avgOldReading = 0;
+unsigned int avgNewReading = 0;
 
-//unsigned int canHorizontalDist = 0;
+unsigned int RADARDistances[RADAR_READINGS] = {[0 ... RADAR_READINGS-1] = 2000};
 
 unsigned int i = 0;
+unsigned int j = 0;
+
+//Start state variables
+unsigned char fillBufferCount = 0;
 
 //RADAR Scan Variables
 unsigned char readingsOnAngle = 0;
@@ -237,16 +264,20 @@ unsigned char anomalyNumber = 0;
 unsigned char canAnomaly = 0;
 unsigned char anomalyStart[NUMBER_OF_ANGLES_CHECKED] = {[0 ... NUMBER_OF_ANGLES_CHECKED-1] = 0};;
 unsigned char anomalyEnd[NUMBER_OF_ANGLES_CHECKED] = {[0 ... NUMBER_OF_ANGLES_CHECKED-1] = 0};;
-int RADARAtEachAngle[NUMBER_OF_ANGLES_CHECKED] = {[0 ... NUMBER_OF_ANGLES_CHECKED-1] = 0};
+unsigned int RADARAtEachAngle[NUMBER_OF_ANGLES_CHECKED] = {[0 ... NUMBER_OF_ANGLES_CHECKED-1] = 0};
 unsigned int newAngle;
 
 //Approaching can variables
 unsigned char lostCan = 0;
+unsigned int  lostCount = 0;
+unsigned int  avgAnomalyDistance = 64000;
+unsigned int  expectedCanDistance = 64000;
+unsigned int  avgNewAnomalyDistance = 64000;
 
-
-//Flags for after main flags are dealt with and then results are used for stateControl()
+//Flags for after event flags are dealt with and then results are used in stateControl()
 char buttonPressed = 0;
-char ultraRead = 0;
+char ultraReadLeft = 0;
+char ultraReadRight = 0;
 char ultraRADARRead = 0;
 //==============================================================================
 // Functions
@@ -324,6 +355,11 @@ __interrupt void Timer1_A0_ISR (void)
     {
         ultraLeft.time[1] += TA1CCR0;
     }
+	
+	if (ultraRight.timeNumber != 0)
+    {
+        ultraRight.time[1] += TA1CCR0;
+    }
 }
 
 //Ultrasonic capture compare
@@ -336,16 +372,14 @@ __interrupt void Timer1_A1_ISR (void)
         TA1CTL &= ~TAIFG;
         break;
     case TA1IV_TACCR1:	//TA1CCR1 (Wall Ultrasonic)
-        if(TA1CCTL1 & CCIS_1)
+        if(TA1CCTL1 & CCIS_1)	//LEFT Ultrasonic being used
         {
-            //P2OUT &= ~RGB_WHITE;
-            //P2OUT|= RGB_GREEN;
             ultraLeft.time[ultraLeft.timeNumber] += TA1CCR1;
             ultraLeft.timeNumber++;
             if (ultraLeft.timeNumber==2)       //After up/down edges of feedback
             {
                 ultraLeft.distance = ultraLeft.time[1]-ultraLeft.time[0];
-                flag.ultraWallRead = 1;
+                flag.ultraLeftRead = 1;
                 ultraLeft.time[0] = 0;
                 ultraLeft.time[1] = 0;
                 ultraLeft.timeNumber=0;
@@ -358,6 +392,26 @@ __interrupt void Timer1_A1_ISR (void)
             }
             TA1CCTL1 &= ~CCIFG;
         }
+		else
+		{
+            ultraRight.time[ultraRight.timeNumber] += TA1CCR1;
+            ultraRight.timeNumber++;
+            if (ultraRight.timeNumber==2)       //After up/down edges of feedback
+            {
+                ultraRight.distance = ultraRight.time[1]-ultraRight.time[0];
+                flag.ultraLeftRead = 1;
+                ultraRight.time[0] = 0;
+                ultraRight.time[1] = 0;
+                ultraRight.timeNumber=0;
+
+                TA1CCTL1 |= CM_1;   //Capture on rising edge
+            }
+            else
+            {
+                TA1CCTL1 |= CM_2;   //Capture on falling edge
+            }
+            TA1CCTL1 &= ~CCIFG;
+		}
         break;
 		
     case TA1IV_TACCR2:	//TA1CCR2 (No interrupt as used in servo PWM)
@@ -370,22 +424,33 @@ __interrupt void Timer1_A1_ISR (void)
 int main(void)
 {
     //Stop watchdog timer
-
     WDTCTL = WDTPW | WDTHOLD;
 
-    //Setup device
+    //Setup User Interface
     setupButton();
+
+    //IndicatorLEDSetup
+    indicatorLEDSetup(&LEDTop);
+    indicatorLEDOff(&LEDTop);
+	
+	//Car DC Motor Setup
     motorSetup(&motorDrive);
     motorSetup(&motorSteer);
+	
+	//Setup Ultrasonic Sensors
     ultrasonicSetup(&ultraLeft);
-	//ultrasonicSetup(&ultraRight);
+	ultrasonicSetup(&ultraRight);
     ultrasonicSetup(&ultraRADAR);
-	servoSetup(&servoA);
+
+    //Infrared Setup
+    IRSetup(&IR);
+	
+	//Setup Servo Motors
+	servoSetup(&servoRADAR);
+	
+	//Setup Internal Timers
 	setupTimerRADAR();
     setupTimerSchedule();
-
-    //TA0CCTL1 = TA1CCTL1;
-    //TA0CCTL1 |= CM_3 +SCCI;
 
     //Disable schedules
     Schedule.debounce.sec = 0;
@@ -397,27 +462,22 @@ int main(void)
 	Schedule.ultraLeftStart.sec = 0;
     Schedule.ultraLeftStart.ms = -1;
 		
-	//Schedule.ultraRightStart.sec = 0;
-    //Schedule.ultraRightStart.ms = -1;
-	
-	//Do an ultrasonic RADAR reading
-	timeIncrement(&(Schedule.ultraRADARStart), 1, 0);
+	Schedule.ultraRightStart.sec = 0;
+    Schedule.ultraRightStart.ms = -1;
 
 	//Start DC motor PWM schedules but set both motors output to do nothing
     timeIncrement(&Schedule.pwmMotorDrive, motorDrive.pwm.aSec, motorDrive.pwm.aMs);
     motorDrive.pwm.state = 1;
     flag.motorDrive = 1;
-    motorDrive.direction = 0;
+    motorDrive.direction = OFF;
 
     timeIncrement(&Schedule.pwmMotorSteer, motorSteer.pwm.aSec, motorSteer.pwm.aMs);
     motorSteer.pwm.state = 1;
     flag.motorSteer = 1;
-    motorSteer.direction = 0;
+    motorSteer.direction = STRAIGHT;
 
-    //RGB to indicate things
-    P2DIR |= 0x2A;
+    //CANT REMEMBER WHAT THIS WAS FOR, TRY REMOVING XXX
     P1DIR |= BIT0;
-    P2OUT &= ~0x2A;
     P1OUT &= ~(BIT0+BIT2);
 
 	//Enable global interrupts
@@ -433,8 +493,8 @@ int main(void)
         }
         else
         {
-            checkFlags();       //Deal with what needs attended
-			stateControl();		//Control behaviour of car
+            checkFlags();       //Deal with events that occurred
+			stateControl();		//Control car behaviour
         }
     }
 }
@@ -464,19 +524,19 @@ void checkSchedule()
         Schedule.ultraLeftStart.ms = -1;
     }
 	
-    //if (isTime(Schedule.ultraRightStart))
-    //{
-    //    //ultrasonicTrigger(&ultraRight);
-	//
-    //    //Disable schedule
-    //    Schedule.ultraRightStart.sec = 0;
-    //    Schedule.ultraRightStart.ms = -1;
-    //}
+    if (isTime(Schedule.ultraRightStart))
+    {
+        ultrasonicTrigger(&ultraRight);
+	
+        //Disable schedule
+        Schedule.ultraRightStart.sec = 0;
+        Schedule.ultraRightStart.ms = -1;
+    }
 	
 	if (isTime(Schedule.ultraRADARStart))
     {
         ultrasonicTrigger(&ultraRADAR);
-        //P2OUT &= ~RGB_WHITE;
+
         //Disable schedule
         Schedule.ultraRADARStart.sec = 0;
         Schedule.ultraRADARStart.ms = -1;
@@ -576,20 +636,53 @@ void checkFlags()
         flag.debounce = 0;
     }
 
-	//Wall ultrasonic has reading ready
-    if (flag.ultraWallRead)
+	//Left wall ultrasonic has reading ready
+    if (flag.ultraLeftRead)
     {
 		//Update array of wall readings
         for(i = WALL_READINGS-1; i > 0; i--)
         {
-            wallDistances[i] = wallDistances[i - 1];
+            wallDistancesLeft[i] = wallDistancesLeft[i - 1];
         }
-        wallDistances[0] = ultraLeft.distance;
+        wallDistancesLeft[0] = ultraLeft.distance;
+		
+        if (state != START)
+        {
+            //Check whether a single reading is an outlier & if so ignore it
+            if (((wallDistancesLeft[1] >= wallDistancesLeft[2]+2000) || (wallDistancesLeft[1] <= wallDistancesLeft[2]-2000))
+                && ((wallDistancesLeft[1] >= wallDistancesLeft[0]+2000) || (wallDistancesLeft[1] <= wallDistancesLeft[0]-2000)))
+            {
+                wallDistancesLeft[1] = (wallDistancesLeft[0]+wallDistancesLeft[2]) >> 1;
+            }
+        }
 		
 		///Attend to in stateControl()
-		ultraRead = 1;
+		ultraReadLeft = 1;
 		
-        flag.ultraWallRead = 0;
+        flag.ultraLeftRead = 0;
+    }
+
+	//Right wall ultrasonic has reading ready
+    if (flag.ultraRightRead)
+    {
+		//Update array of wall readings
+        for(i = WALL_READINGS-1; i > 0; i--)
+        {
+            wallDistancesRight[i] = wallDistancesRight[i - 1];
+        }
+        wallDistancesRight[0] = ultraRight.distance;
+		
+		//Check whether a single reading is an outlier & if so ignore it
+		if (((wallDistancesRight[1] >= wallDistancesRight[2]+2000) || (wallDistancesRight[1] <= wallDistancesRight[2]-2000))
+			&& ((wallDistancesRight[1] >= wallDistancesRight[0]+2000) || (wallDistancesRight[1] <= wallDistancesRight[0]-2000)))
+		{
+			wallDistancesRight[1] = (wallDistancesRight[0]+wallDistancesRight[2]) >> 1;
+		}
+		
+		///Attend to in stateControl()
+		ultraReadRight = 1;
+		
+        flag.ultraRightRead = 0;
     }
 	
 	//Wall ultrasonic has reading ready
@@ -601,6 +694,16 @@ void checkFlags()
             RADARDistances[i] = RADARDistances[i - 1];
         }
         RADARDistances[0] = ultraRADAR.distance;
+
+        if (state != RADAR_SCAN)
+        {
+            //Check whether a single reading is an outlier & if so ignore it
+            if (((RADARDistances[1] >= RADARDistances[2]+2000) || (RADARDistances[1] <= RADARDistances[2]-2000))
+                && ((RADARDistances[1] >= RADARDistances[0]+2000) || (RADARDistances[1] <= RADARDistances[0]-2000)))
+            {
+                RADARDistances[1] = (RADARDistances[0]+RADARDistances[2]) >> 1;
+            }
+        }
 
 		///Attend to in stateControl()
 		ultraRADARRead = 1;
@@ -641,85 +744,8 @@ void checkFlags()
         previousState = state;
         state = nextState;
 		
-		//Events to occur when changing to GO state
-		if (state == START)
-		{
-			
-		}
-        else if (state == SEARCH)
-        {
-            //Start driving forward
-            motorDrive.direction = FORWARD;
-            flag.motorDrive = 1;
-
-            //Centre RADAR
-            servoCenter();
-
-            //Initiate first ultrasonic reading
-            ultrasonicTrigger(&ultraLeft);
-        }
-        else if (state == CAN_ALIGN)
-        {
-			motorDrive.direction = BACK;
-            motorDrive.pwm.aMs = 0.6*MOTOR_PWM_PERIOD;
-            flag.motorDrive = 1;
-
-            motorSteer.direction = RIGHT;
-            flag.motorSteer = 1;
-			
-			nextState = RADAR_SCAN;
-			timeIncrement(&Schedule.stateChange, 1, 0);
-        }
-        else if (state == RADAR_SCAN)
-        {
-			//Clear variables used in function
-			readingsOnAngle = 0;
-			anglesChecked = 0;
-			newAngle = 0;
-			avgReading = 0;
-			anomalyNumber = 0;
-			canAnomaly = 0;
-			
-			for (i=0; i<NUMBER_OF_ANGLES_CHECKED; i++)
-			{
-			    anomalyStart[i] = 0;
-			    anomalyEnd[i] = 0;
-				anomalyPositions[i] = 0;
-				RADARAtEachAngle[i] = 0;
-			}
-			
-			//Prepare servo to turn anti-clockwise
-			servoA.direction = 1;
-			
-			//Stop driving
-			motorDrive.direction = OFF;
-			motorSteer.direction = STRAIGHT;
-			flag.motorDrive = 1;
-			flag.motorSteer = 1;
-			
-			//Rotate servo full clockwise
-            TA1CCR2 = PWM_SERVO_LOWER;
-			
-			//Start first reading in a second when servo has turned
-			timeIncrement(&Schedule.ultraRADARStart, 1, 0);
-        }
-		else if (state == CAN_APPROACH)
-		{
-			motorDrive.pwm.aMs = 0.3*MOTOR_PWM_PERIOD;
-			motorDrive.direction = FORWARD;
-			flag.motorDrive = 1;
-			
-			lostCan = 0;
-			
-			timeIncrement(&Schedule.ultraRADARStart, 0, 20);
-		}
-        else if (state == STOP)
-        {
-        }
-        else
-        {
-            //state = START;
-        }
+		changingState();
+		
         flag.stateChange = 0;
     }
 }
@@ -744,19 +770,19 @@ void stateControl()
 		}
 		
 		//Use initial ultrasonic reading as distance to wall to maintain
-		if (ultraRead)
+		if (ultraReadLeft)
 		{
 		    if(TA1CCTL1 & CCIS_1)
 		    {
-		        leftWall = wallDistances[i];
+		        leftWall = wallDistancesLeft[i];
 		    }
 
-		    if (i < WALL_READINGS)
+		    if (fillBufferCount < WALL_READINGS)
 		    {
-		        i++;
+		        fillBufferCount++;
 		        timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
 		    }
-			ultraRead = 0;
+			ultraReadLeft = 0;
 		}
 
 	}
@@ -767,22 +793,14 @@ void stateControl()
 		//Drive forward at start (Done in state change)
 
 		//Take ultrasonic readings to wall to stay aligned and if can is past on left
-		if (ultraRead)
+		if (ultraReadLeft)
 		{
-		    avgReading = 0;
-            //When reading is suddenly closer can detected so change state
-            for(i=0;i<WALL_READINGS;i++)
-            {
-                avgReading += wallDistances[i];
-            }
-            avgReading = avgReading/WALL_READINGS;
-            if (avgReading < 20)
-            {
-                avgReading = 32000;
-            }
+			findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
 
             if(avgReading < leftWall-CAN_DETECT_DIST)
             {
+                //distToCan = avgReading;
+                //angleToCan = PWM_SERVO_LOWER;
                 nextState = CAN_ALIGN;
                 flag.stateChange = 1;
             }
@@ -793,23 +811,13 @@ void stateControl()
 		    //Trigger next reading in 20 ms
 		    timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
 
-			ultraRead = 0;
+			ultraReadLeft = 0;
 		}
 		
 		//Take forward readings to see if can is in front of car
 		if (ultraRADARRead)
 		{
-		    avgReading = 0;
-            //When reading is suddenly closer can detected so change state
-            for(i=0;i<RADAR_READINGS;i++)
-            {
-                avgReading += RADARDistances[i];
-            }
-            avgReading = avgReading/RADAR_READINGS;
-            if (avgReading < 20)
-            {
-                avgReading = 32000;
-            }
+		    findDistanceAverage(1, RADAR_READINGS, RADARDistances);
 
             if(avgReading < MAX_FRONT_DETECT)
             {
@@ -865,13 +873,13 @@ void stateControl()
     if (state == CAN_APPROACH)
     {
 		//Drive to heading of RADAR
-        if (TA1CCR2 < 1500) //CAN TO THE LEFT?
-        {
-            motorSteer.direction = LEFT;
-        }
-        else if (TA1CCR2 > 1500) //CAN TO THE RIGHT
+        if (TA1CCR2 < 1500) //CAN TO THE RIGHT
         {
             motorSteer.direction = RIGHT;
+        }
+        else if (TA1CCR2 > 1500) //CAN TO THE LEFT
+        {
+            motorSteer.direction = LEFT;
         }
         else
         {
@@ -879,73 +887,117 @@ void stateControl()
         }
 		flag.motorSteer = 1;
 		
+
 		//Track can with RADAR
 		if (ultraRADARRead)
 		{
 			//Get an average
-			avgOldReading = avgReading;
-			avgReading = 0;
-            for(i=0;i<RADAR_READINGS;i++)
-            {
-                avgReading += RADARDistances[i];
-            }
-            avgReading = avgReading/RADAR_READINGS;
-            if (avgReading < 20)
-            {
-                avgReading = 32000;
-            }
+			findDistanceAverage(1, RADAR_READINGS, RADARDistances);
 			
 			//When reading is close enough can is in front
-            if(avgReading < MAX_FRONT_DETECT)
+            if(avgReading < 500)
             {
-                nextState = COLOUR_DETECT;
-                flag.stateChange = 1;
+                indicatorLEDOff(&LEDTop);
+                if ((TA1CCR2 > 1500-FACE_CAN_TOLERANCE) && (TA1CCR2 < 1500+FACE_CAN_TOLERANCE))   //If facing can
+                {
+					//Stop driving
+                    motorDrive.direction = OFF;
+                    motorSteer.direction = STRAIGHT;
+                    flag.motorDrive = 1;
+                    flag.motorSteer = 1;
+
+                    nextState = COLOUR_DETECT;
+                    flag.stateChange = 1;
+                }
+                else
+                {
+                    nextState = CAN_ALIGN;
+                    flag.stateChange = 1;
+                }
             }
 			
-			//Determine whether can is being looked at
+			//Behaviours whether can is lost
 			if (lostCan)	//If can is lost
 			{
-				if (avgReading < avgOldReading-100)	//Can refound
+				if (avgReading < expectedCanDistance+300)	//Can refound
 				{
+				    motorDrive.direction = FORWARD;
+				    flag.motorDrive = 1;
+
+				    expectedCanDistance = avgReading;
 					lostCan = 0;
-					motorDrive.direction = FORWARD;
+					lostCount = 0;
+
+					indicatorLEDOn(&LEDTop);
+					timeIncrement(&Schedule.ultraRADARStart, 0, 20);
+				}
+				else	//Can still lost
+				{
+				    lostCan = 1;
+				    motorDrive.direction = OFF;
+				    flag.motorDrive = 1;
+
+				    if (lostCount == 2)
+				    {
+				        servoRADAR.direction ^= 1;
+				    }
+				    else if (lostCount == 6)
+				    {
+				        servoRADAR.direction ^= 1;
+				    }
+				    else if (lostCount > 6)
+					{
+					    nextState = RADAR_SCAN;
+					    flag.stateChange = 1;
+					}
+
+					indicatorLEDOff(&LEDTop);
+					servoTurn(&servoRADAR);
+					timeIncrement(&Schedule.ultraRADARStart, 0, 200);
+					lostCount++;
 				}
 			}
 			else	//If can is not lost
 			{
-				if (avgReading > avgOldReading+100)	//Now lost
+				if (avgReading > expectedCanDistance+200)	//Now lost
 				{
 					lostCan = 1;
-					motorDrive.direction = FORWARD;
+					motorDrive.direction = OFF;
+					flag.motorDrive = 1;
 					
-					if (motorSteer.direction == RIGHT)
+					if (TA1CCR2 >= 1500)
 					{
-						servoA.direction = 0;
+						servoRADAR.direction = 0;
 					}
-					else if  (motorSteer.direction == LEFT)
+					else if  (TA1CCR2 < 1500)
 					{
-						servoA.direction = 1;
+						servoRADAR.direction = 1;
 					}
 					else
 					{
+					    /*
 						nextState = RADAR_SCAN;
-						flag.stateChange = 1;
+						flag.stateChange = 1;*/
 					}
+
+                    indicatorLEDOff(&LEDTop);
+                    servoTurn(&servoRADAR);
+                    timeIncrement(&Schedule.ultraRADARStart, 0, 200);
+                    lostCount = 1;
+				}
+				else    //Still looking at can
+				{
+				    lostCan = 0;
+				    lostCount = 0;
+				    motorDrive.direction = FORWARD;
+				    flag.motorDrive = 1;
+
+				    expectedCanDistance = avgReading; //Update latest distance to can
+
+				    indicatorLEDOn(&LEDTop);
+					timeIncrement(&Schedule.ultraRADARStart, 0, 20);
 				}
 			}
-			
-			if (lostCan)
-			{
-				servoTurn(&servoA);
-				timeIncrement(&Schedule.ultraRADARStart, 0, 200);
-			}
-			else
-			{
-				P2OUT &= ~RGB_WHITE;
-				P2OUT |= RGB_BLUE;
-				timeIncrement(&Schedule.ultraRADARStart, 0, 20);
-			}
-
 			ultraRADARRead = 0;
 		}
 
@@ -960,32 +1012,7 @@ void stateControl()
 //DETECT COLOUR========================================================================
     if (state == COLOUR_DETECT)
     {
-		//Stop driving
-		motorDrive.direction = OFF;
-		motorSteer.direction = STRAIGHT;
-		flag.motorDrive = 1;
-		flag.motorSteer = 1;
-		
-		P2OUT &= ~RGB_WHITE;
-		P2OUT |= RGB_GREEN;
-
-		// Check IR sensor - get colour
-		IRRead(IR);
-
-		// Decide HIT or AVOID depending on BLACK or WHITE can
-		if (IR->colour == 0)
-		{
-		    // Hit can if WHITE
-		    state = CAN_AVOID;
-		    flag.stateChange = 1;
-		}
-
-		if (IR->colour == 1)
-        {
-		    // Hit can if BLACK
-            state = CAN_HIT;
-            flag.stateChange = 1;
-        }
+        //Functionality done when changing to state
 
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
         if (buttonPressed)
@@ -998,11 +1025,6 @@ void stateControl()
 //HIT CAN IF BLACK========================================================================
     if (state == CAN_HIT)
     {
-
-
-
-
-
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
         if (buttonPressed)
         {
@@ -1014,10 +1036,6 @@ void stateControl()
 //AVOID CAN IF WHITE======================================================================
     if (state == CAN_AVOID)
     {
-
-
-
-
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
         if (buttonPressed)
         {
@@ -1036,14 +1054,6 @@ void stateControl()
 	        state = START;
 	        buttonPressed = 0;
 	    }
-		
-		P2OUT &= ~RGB_BLUE;
-
-		//Stop all motors and readings
-		motorDrive.direction = OFF;
-		motorSteer.direction = STRAIGHT;
-        flag.motorDrive = 1;
-        flag.motorSteer = 1;
 	}
 
 }
@@ -1131,11 +1141,11 @@ void alignToWall()
     char turnStatePrevious = turnState;
 
     //When state change is based on measured distance to wall
-    if(wallDistances[0] < leftWall-WALL_TOLERANCE)       //When drifted closer to wall
+    if(wallDistancesLeft[0] < leftWall-WALL_TOLERANCE)       //When drifted closer to wall
     {
         turnState = AWAY;
     }
-    else if(wallDistances[0] > leftWall+WALL_TOLERANCE)  //When drifted further from wall
+    else if(wallDistancesLeft[0] > leftWall+WALL_TOLERANCE)  //When drifted further from wall
     {
         turnState = CLOSE;
     }
@@ -1188,16 +1198,7 @@ void RADAR()
         //Get average reading for angle set to
         readingsOnAngle = 0;
         avgOldReading = avgReading;
-        avgReading = 0;
-        for(i=0;i<RADAR_READINGS;i++)
-        {
-            avgReading += RADARDistances[i];
-        }
-        avgReading = avgReading/RADAR_READINGS;
-        if (avgReading < 20)
-        {
-            avgReading = 32000;
-        }
+        findDistanceAverage(1, RADAR_READINGS, RADARDistances);
         RADARAtEachAngle[anglesChecked] = avgReading;
 
         //FIND ANOMALIES
@@ -1209,29 +1210,41 @@ void RADAR()
             if (anomalyPositions[anglesChecked-1]==0)
             {
                 //When reading suddenly closer
-                if ((avgReading < avgOldReading-200) & (avgReading < MAX_RADAR_DISTANCE))
+                //if ((avgReading < avgOldReading-200) & (avgReading < MAX_RADAR_DISTANCE))
+                if (avgReading < avgOldReading-ANOMALY_DISTANCE)
                 {
                     anomalyPositions[anglesChecked] = 1;
-                    P2OUT |= RGB_BLUE;
+                    anomalyStart[anomalyNumber] = anglesChecked;
+                    indicatorLEDOn(&LEDTop);
                 }
                 else
                 {
                     anomalyPositions[anglesChecked] = 0;
-                    P2OUT &= ~RGB_BLUE;
+                    indicatorLEDOff(&LEDTop);
                 }
             }
             else    //If last reading is anomaly
             {
                 //When reading suddenly further way
-                if (avgReading > avgOldReading+150)
+                if (avgReading > avgOldReading+100)
                 {
                     anomalyPositions[anglesChecked] = 0;
-                    P2OUT &= ~RGB_BLUE;
+                    anomalyEnd[anomalyNumber] = anglesChecked;
+                    anomalyNumber++;
+                    indicatorLEDOff(&LEDTop);
+                }
+                else if (avgReading < avgOldReading-ANOMALY_DISTANCE) //Start of a new anomaly if in front of old anomaly
+                {
+                    anomalyPositions[anglesChecked] = 1;
+                    anomalyEnd[anomalyNumber] = anglesChecked;
+                    anomalyNumber++;
+                    anomalyStart[anomalyNumber] = anglesChecked;
+                    indicatorLEDToggle(&LEDTop);
                 }
                 else
                 {
                     anomalyPositions[anglesChecked] = 1;
-                    P2OUT |= RGB_BLUE;
+                    indicatorLEDOn(&LEDTop);
                 }
             }
         }
@@ -1243,65 +1256,72 @@ void RADAR()
         if (anglesChecked < NUMBER_OF_ANGLES_CHECKED)
         {
             //Go to next angle
-            servoTurn(&servoA);
+            servoTurn(&servoRADAR);
             timeIncrement(&Schedule.ultraRADARStart, 0, 200);
         }
         else    //Turn to where anomaly is thought to be after all angles checked
         {
-            //Find area of anomalies
-            for(i=1;i<NUMBER_OF_ANGLES_CHECKED; i++)
-            {
-                if (anomalyPositions[i])
-                {
-                    if (anomalyStart[i-1] == 0)
-                    {
-                        anomalyStart[anomalyNumber] = i;
-                        while((anomalyPositions[i]) & (i < NUMBER_OF_ANGLES_CHECKED))
-                        {
-                            anomalyEnd[anomalyNumber] = i;
-                            i++;
-                        }
-                        anomalyNumber++;
-                    }
-                }
-            }
-
-            //Find closest anomaly
-            avgOldReading = 32000;
-            //For each anomaly
-            for (readingsOnAngle =0; readingsOnAngle<anomalyNumber; readingsOnAngle++)
-            {
-                avgReading = 0;
-                //For each reading in the anomaly
-                for (i=anomalyStart[readingsOnAngle]; i < 1+anomalyEnd[readingsOnAngle]; i++)
-                {
-                    avgReading += RADARAtEachAngle[i];
-                }
-                avgReading = avgReading/(1+anomalyEnd[readingsOnAngle]-anomalyStart[readingsOnAngle]);
-                if (avgReading < 20)
-                {
-                    avgReading = 32000;
-                }
-                if (avgReading < avgOldReading)
-                {
-                    avgOldReading = avgReading;
-                    canAnomaly = anomalyStart[readingsOnAngle]+(anomalyEnd[readingsOnAngle]-anomalyStart[readingsOnAngle])/2;
-                }
-              }
-
             //If no anomaly
             if (anomalyStart[0] == 0)
             {
                 servoCenter();
-                nextState = previousState;  //No can, so go back to previous behaviour (search or can align)
+                nextState = SEARCH;  //No can, so go back to previous behaviour (search or can align)
                 flag.stateChange = 1;
             }
-            else    //Set servo to point at centre of can if anomaly found
+            else    //Set servo to point at centre of closest anomaly found
             {
-                newAngle = PWM_SERVO_UPPER;
-                for (i=NUMBER_OF_ANGLES_CHECKED;i>canAnomaly;i--)
+                //If last anomaly never ended
+                if ((anomalyStart[anomalyNumber] != 0) && (anomalyEnd[anomalyNumber] == 0))
                 {
-                    newAngle -= servoA.speed;
+                    anomalyEnd[anomalyNumber] = NUMBER_OF_ANGLES_CHECKED-1;
+                }
+
+                /*
+                //If anomaly is left-most
+                if ((anomalyEnd[anomalyNumber] = NUMBER_OF_ANGLES_CHECKED-1) &
+                        ((RADARAtEachAngle[14] < leftWall+100) & (RADARAtEachAngle[14] > leftWall-100)))
+                {
+                    anomalyStart[anomalyNumber] = 0;
+                    anomalyEnd[anomalyNumber] = 0;
+                    anomalyNumber--;
+                }*/
+
+                //Find closest anomaly
+                expectedCanDistance = 65000;
+                //For each anomaly
+                for (readingsOnAngle = 0; readingsOnAngle<anomalyNumber+1; readingsOnAngle++)
+                {
+                    //Average reading of the anomaly
+                    avgAnomalyDistance = 0;
+                    avgNewAnomalyDistance = 0;
+                    for(j=anomalyStart[readingsOnAngle];j<1+anomalyEnd[readingsOnAngle];j++)
+                    {
+                        avgNewAnomalyDistance += RADARAtEachAngle[j];
+                        //If value has wrapped set to the maximum
+                        if (avgNewAnomalyDistance < avgAnomalyDistance)
+                        {
+                            avgAnomalyDistance = 65000;
+                            break;
+                        }
+                        avgAnomalyDistance = avgNewAnomalyDistance;
+                    }
+                    if (avgAnomalyDistance != 65000)
+                    {
+                        avgAnomalyDistance = avgAnomalyDistance/(1+anomalyEnd[readingsOnAngle]-anomalyStart[readingsOnAngle]);
+                    }
+
+                    if (avgAnomalyDistance < expectedCanDistance)
+                    {
+                        expectedCanDistance = avgAnomalyDistance;
+                        canAnomaly = anomalyStart[readingsOnAngle]+((anomalyEnd[readingsOnAngle]-anomalyStart[readingsOnAngle])>>1);
+                    }
+                }
+                readingsOnAngle = 0;
+
+                newAngle = PWM_SERVO_UPPER;
+                for (j=NUMBER_OF_ANGLES_CHECKED;j>canAnomaly;j--)
+                {
+                    newAngle -= servoRADAR.speed;
                 }
                 TA1CCR2 = newAngle;
                 nextState = CAN_APPROACH;
@@ -1313,6 +1333,197 @@ void RADAR()
     {
         timeIncrement(&Schedule.ultraRADARStart, 0, 20);
     }
+}
+
+void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int *values)
+{
+    unsigned char increments = 0;
+	avgReading = 0;
+	avgNewReading = 0;
+
+	for(increments=start;increments<end;increments++, values++)
+	{
+		avgNewReading += *values >> AVERAGE_SHIFT;
+
+		//If value has wrapped set to the maximum
+		if (avgNewReading < avgReading)
+		{
+			avgReading = 65000;
+			break;
+		}
+		avgReading = avgNewReading;
+	}
+}
+
+//Events to occur when changing to each state
+void    changingState()
+{
+	if (state == START)
+	{
+		//Count for wall buffer
+		fillBufferCount = 0;
+	}
+	
+	if (state == SPRINT)
+	{
+		
+	}
+	
+	if (state == SEARCH)
+	{
+		//Start driving forward
+		motorDrive.direction = FORWARD;
+		flag.motorDrive = 1;
+
+		//Centre RADAR
+		servoCenter();
+
+		//Initiate first ultrasonic reading
+		ultrasonicTrigger(&ultraLeft);
+	}
+	
+	if (state == CAN_ALIGN)
+	{
+		motorDrive.direction = BACK;
+		motorDrive.pwm.aMs = 0.6*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = RIGHT;
+		flag.motorSteer = 1;
+		
+		nextState = RADAR_SCAN;
+		timeIncrement(&Schedule.stateChange, 0, ALIGNMENT_TIME);
+	}
+	
+	if (state == RADAR_SCAN)
+	{
+		//Clear variables used in state
+		readingsOnAngle = 0;
+		anglesChecked = 0;
+		newAngle = 0;
+		anomalyNumber = 0;
+		canAnomaly = 0;
+		
+		for (i=0; i<NUMBER_OF_ANGLES_CHECKED; i++)
+		{
+			anomalyStart[i] = 0;
+			anomalyEnd[i] = 0;
+			anomalyPositions[i] = 0;
+			RADARAtEachAngle[i] = 0;
+		}
+		
+		//Prepare servo to turn anti-clockwise
+		servoRADAR.direction = 1;
+		
+		//Stop driving
+		motorDrive.direction = OFF;
+		motorSteer.direction = STRAIGHT;
+		flag.motorDrive = 1;
+		flag.motorSteer = 1;
+		
+		//Rotate servo full clockwise
+		TA1CCR2 = PWM_SERVO_LOWER;
+		
+		//Start first reading in a second when servo has turned
+		timeIncrement(&Schedule.ultraRADARStart, 1, 0);
+	}
+	
+	if (state == CAN_APPROACH)
+	{
+		motorDrive.pwm.aMs = 0.3*MOTOR_PWM_PERIOD;
+		motorDrive.direction = FORWARD;
+		flag.motorDrive = 1;
+		
+		lostCan = 0;
+		lostCount = 0;
+		
+		timeIncrement(&Schedule.ultraRADARStart, 0, 20);
+	}
+	
+	if (state == COLOUR_DETECT)
+	{
+		// Check IR sensor - get colour
+		IRRead(&IR);
+
+		// Decide HIT or AVOID depending on BLACK or WHITE can
+		if (IR.colour)
+		{
+			// Hit can if BLACK
+			nextState = REVERSE_CAN;
+			flag.stateChange = 1;
+			indicatorLEDOn(&LEDTop);
+		}
+		else
+		{
+			// Avoid can if WHITE
+			nextState = CAN_AVOID;
+			flag.stateChange = 1;
+			indicatorLEDOff(&LEDTop);
+		}
+	}
+	
+	if (state == REVERSE_CAN)
+	{
+		motorDrive.direction = BACK;
+		motorDrive.pwm.aMs = REVERSE_SPEED*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = STRAIGHT;
+		flag.motorSteer = 1;
+		
+		nextState = CAN_HIT;
+		timeIncrement(&Schedule.stateChange, 0, REVERSE_TIME);
+	}
+	
+	if (state == CAN_HIT)
+	{
+		motorDrive.direction = FORWARD;
+		motorDrive.pwm.aMs = MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = STRAIGHT;
+		flag.motorSteer = 1;
+		
+		nextState = WALL_REALIGN;
+		timeIncrement(&Schedule.stateChange, 0, HIT_TIME);
+	}
+	
+	if (state == CAN_AVOID)
+	{
+		motorDrive.direction = BACK;
+		motorDrive.pwm.aMs = AVOID_SPEED*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = LEFT;
+		flag.motorSteer = 1;
+		
+		nextState = SEARCH;
+		timeIncrement(&Schedule.stateChange, 0, AVOID_TIME);
+	}
+	
+	if (state == WALL_REALIGN)
+	{
+		motorDrive.direction = BACK;
+		motorDrive.pwm.aMs = AVOID_SPEED*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = LEFT;
+		flag.motorSteer = 1;
+		
+		nextState = SEARCH;
+		timeIncrement(&Schedule.stateChange, 0, AVOID_TIME);
+	}
+	
+	if (state == STOP)
+	{
+		indicatorLEDOff(&LEDTop);
+
+		//Stop all motors and readings
+		motorDrive.direction = OFF;
+		motorSteer.direction = STRAIGHT;
+        flag.motorDrive = 1;
+        flag.motorSteer = 1;
+	}
 }
 //==============================================================================
 // End of File : AutonomousCar/main.c
