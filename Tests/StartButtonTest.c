@@ -10,8 +10,9 @@ which checkSchedule() raises debounce flag, which causes LED Indicator to be tog
 // External libraries
 #include <msp430.h>
 
-/*// Local libraries
-#include "TestingSetup.h"*/
+// Local libraries
+#include "StartStopButton.h"
+#include "LEDIndicator.h"
 
 // Available clock information
 #define SMCK_FREQ      1000000
@@ -24,10 +25,6 @@ which checkSchedule() raises debounce flag, which causes LED Indicator to be tog
 
 // Scheduler control
 #define TIMER_INC_MS    2           //Scheduler interrupts period (2 ms)
-
-// Hardware ports
-#define LED_INDICATOR       BIT5                    // Located at P2.5
-#define START_STOP_BUTTON   BIT3                    // Located at P1.3
 
 // Defines structure for program timing - required for all tests bar LEDIndicatorTest
 struct Time {
@@ -102,33 +99,6 @@ void timeIncrement(struct Time *time, int sec, int ms)
     }
 }
 
-// Sets up the start stop switch
-void setupStartStop()
-{
-    //Setup button for input and interrupt (P1.3)
-    P1DIR &= ~START_STOP_BUTTON;
-
-    //Pull up so when pressed will go high to low
-    P1REN |= START_STOP_BUTTON;
-    P1OUT |= START_STOP_BUTTON;
-    P1IE |= START_STOP_BUTTON;                                          // Enable interrupts
-    P1IES |= START_STOP_BUTTON;                                         // High to Low transition
-    P1IFG &= ~START_STOP_BUTTON;                                        // Clear interrupts
-}
-
-// Setup the LED Indicator
-void setupLEDIndicator()
-{
-    P2DIR |= LED_INDICATOR;                                             // Set P2.5 as an output
-    P2OUT &= ~LED_INDICATOR;                                            // Turn off indicator LED when initialised
-}
-
-// Toggle LED Indicator
-void toggleLEDIndicator()
-{
-    P2OUT ^= LED_INDICATOR;                                             // Toggle P2.5 output
-}
-
 // Checks if debouncing has occured
 void checkSchedule()
 {
@@ -160,7 +130,7 @@ void checkFlags()
     }
 
     //On button press start debounce
-    if (flag.button)
+    if(flag.button)
     {
         if(Schedule.debounce.sec == 0 && Schedule.debounce.ms == -1)    // If debounce not currently occurring
         {

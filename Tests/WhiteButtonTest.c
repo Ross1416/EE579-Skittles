@@ -103,7 +103,7 @@ void timeIncrement(struct Time *time, int sec, int ms)
 }
 
 // Sets up the start stop switch
-void setupStartStop()
+void setupWhiteButton()
 {
     //Setup button for input and interrupt (P2.6)
     P2DIR &= ~WHITE_BUTTON;
@@ -150,7 +150,7 @@ void checkFlags()
     // Debounce wait has finished
     if(flag.debounce)
     {
-        if((P1IN & WHITE_BUTTON) != WHITE_BUTTON)             // Button still pressed after debounce - choose 0x08 or BIT3 or WHITE_BUTTON
+        if((P1IN & WHITE_BUTTON) != WHITE_BUTTON)             // Button still pressed after debounce
         {
             toggleLEDIndicator();                                       // Toggle LED inidicator to show button has been pressed
         }
@@ -160,7 +160,7 @@ void checkFlags()
     }
 
     //On button press start debounce
-    if (flag.button)
+    if(flag.button)
     {
         if(Schedule.debounce.sec == 0 && Schedule.debounce.ms == -1)    // If debounce not currently occurring
         {
@@ -176,7 +176,7 @@ int main(void)
     WDTCTL = WDTPW | WDTHOLD;
 
     // Setup device
-    setupStartStop();                                                   // Selects button input and sets up port 1 intterput for button
+    setupWhiteButton();                                                 // Selects button input and sets up port 1 intterput for button
     setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
     setupLEDIndicator();                                                // Sets the LED indicator to be used for testing
 
