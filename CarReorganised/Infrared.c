@@ -37,7 +37,7 @@ void IRRead(struct Infrared *ir)
 {
     if (ir->port == 1)
     {
-      if (P1IN & (ir->pin))                         // Black skittle or environemnt detected
+      if (P1IN & (ir->pin))                         // Black skittle or environment detected
       {
           ir->colour = 1;                         // 1 for black
       }

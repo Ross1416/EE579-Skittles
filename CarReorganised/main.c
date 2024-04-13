@@ -23,6 +23,9 @@ Change History
 08-APR-2024 SARK added code for car to approach can
 09-APR-2024 SARK added right ultrasonic code
 09-APR-2024 RI added AL's IR sensor functionality
+10-APR-2024 SARK debugged to allow car to nudge into a can
+11-APR-2024 SARK got car to knock over a can & started looking into colour sensing
+12-APR-2024 SARK got colour sensing to work and working on realigning to wall to repeat
 --------------------------------------------------------------------------------
 */
 
@@ -88,6 +91,12 @@ struct Scheduler {
     //Time at which motor PWM should change
     struct Time pwmMotorDrive;
     struct Time pwmMotorSteer;
+
+    //Time to change movement
+    struct Time movementChange;
+	
+	//Time to start searching for cans
+	struct Time searchStart;
 };
 
 //==============================================================================
@@ -117,8 +126,11 @@ void    timeIncrement(struct Time *time, int sec, int ms);
 //Other Functionality
 void    alignToWall();
 void	RADAR();
+void    RADARFindWall();
+void    canLock();
 void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int *values);
 void    changingState();
+void    circumnavigate();
 
 //==============================================================================
 // MACROs
@@ -147,7 +159,7 @@ void    changingState();
 #define COLOUR_DETECT 	6
 #define REVERSE_CAN     7
 #define CAN_HIT			8
-#define CAN_AVOID		9
+#define CIRCUMNAVIGATE  9
 #define WALL_REALIGN    10
 #define STOP        	11
 
@@ -174,9 +186,10 @@ void    changingState();
 #define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1)
 #define WALL_TOLERANCE  dist2pulse(2)       //Distance +- correct distance from wall
 #define CAN_DETECT_DIST dist2pulse(10)      //Distance closer then wall
+#define TIME_BEFORE_SEARCHING   1
 
 //Time to align to can
-#define ALIGNMENT_TIME   850
+//#define ALIGNMENT_TIME   850
 
 //RADAR Reading control
 #define RADAR_READINGS   5					//Make equal to wall readings
@@ -188,7 +201,8 @@ void    changingState();
 #define MAX_RADAR_DISTANCE          dist2pulse(50)
 
 //CAN APPROACH
-#define FACE_CAN_TOLERANCE          320
+#define FACE_CAN_ANGLE_TOLERANCE    250
+#define FACE_CAN_DIST_TOLERANCE     500
 
 //REVERSE TIME FOR RUN UP TO CAN
 #define REVERSE_TIME   500
@@ -197,9 +211,13 @@ void    changingState();
 //HIT CAN
 #define HIT_TIME   900
 
-//AVOID CAN
-#define AVOID_TIME   800
-#define AVOID_SPEED  0.8
+//CIRCUMNAVIGATE
+#define CIRCUMNAVIGATE_SPEED 0.75
+
+//REALIGN TO WALL
+#define REALIGN_TIME_S  1
+#define REALIGN_TIME_MS 250
+#define REALIGN_SPEED   0.4
 
 
 
@@ -211,50 +229,50 @@ struct Time currentTime     =   {0, 0};    //Running count of time
 struct Scheduler Schedule   =   {0};       //Schedule when events should
 struct flags flag           =   {0};       //Flag when something needed to be attended
 
+//Hardware Variable Instantiation
+//Indicator LED (Port 2)
+struct IndicateLED LEDTop = {2, BIT5};
+//DC Motor info (Port 1)
+struct MotorDC motorDrive = {0, BIT5, BIT4, {0, MOTOR_PWM_PERIOD, 0, SPEED_TOP, 1}};
+struct MotorDC motorSteer = {0, BIT6, BIT7, {0, MOTOR_PWM_PERIOD, 0, MOTOR_PWM_PERIOD, 1}};
+//Wall Ultrasonic info (Port 2)
+struct Ultrasonic ultraLeft = {0, {0, 0}, 0, BIT0, BIT2, 2};
+struct Ultrasonic ultraRight = {0, {0, 0}, 0, BIT0, BIT1, 2};
+//RADAR Ultrasonic info (Port 1)
+struct Ultrasonic ultraRADAR = {0, {0, 0}, 0, BIT0, BIT2, 1};
+//Servo info (Port 2)
+struct Servo servoRADAR = {BIT4, (PWM_SERVO_UPPER-PWM_SERVO_LOWER)/NUMBER_OF_ANGLES_CHECKED, 0};
+// IR info (Port 2)
+struct Infrared IR = {2, BIT3, 2};
+
+//General Variables
+unsigned int avgReading = 0;
+unsigned int avgOldReading = 0;
+unsigned int avgNewReading = 0;
+unsigned int i = 0;
+unsigned int j = 0;
+
 //What car should be doing
 char previousState  =   START;
 char state          =   START;
 char nextState      =   START;
 
-//Indicator LED (Port 2)
-struct IndicateLED LEDTop = {2, BIT5};
+//Start state variables
+unsigned char fillBufferCount = 0;
 
-//DC Motor info (Port 1)
-struct MotorDC motorDrive = {0, BIT5, BIT4, {0, MOTOR_PWM_PERIOD, 0, SPEED_TOP, 1}};
-struct MotorDC motorSteer = {0, BIT6, BIT7, {0, MOTOR_PWM_PERIOD, 0, MOTOR_PWM_PERIOD, 1}};
-
-//Wall Ultrasonic info (Port 2)
-struct Ultrasonic ultraLeft = {0, {0, 0}, 0, BIT0, BIT2, 2};
-struct Ultrasonic ultraRight = {0, {0, 0}, 0, BIT0, BIT1, 2};
-
-//RADAR Ultrasonic info (Port 1)
-struct Ultrasonic ultraRADAR = {0, {0, 0}, 0, BIT0, BIT2, 1};
-
-//Servo info (Port 2)
-struct Servo servoRADAR = {BIT4, (PWM_SERVO_UPPER-PWM_SERVO_LOWER)/NUMBER_OF_ANGLES_CHECKED, 0};
-
-// IR info (Port 2)
-struct Infrared IR = {2, BIT3, BIT2};
-
-//Wall alignment info
+//Wall alignment & search info
 unsigned int leftWall;			//Initial distance to maintain to left wall
 unsigned int rightWall;         //Initial distance to maintain to right wall
 char turnState = STRAIGHT;				//Wall alignment turning instruction
 unsigned int  wallDistancesLeft[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 0};	//Distance readings to left wall
 unsigned int  wallDistancesRight[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 0};	//Distance readings to left wall
 unsigned char turnStateTime = 0;					//Time spent turning to correct for wall
-
-unsigned int avgReading = 0;
-unsigned int avgOldReading = 0;
-unsigned int avgNewReading = 0;
-
+unsigned char canPosition = STRAIGHT;
+unsigned char search = 0;
 unsigned int RADARDistances[RADAR_READINGS] = {[0 ... RADAR_READINGS-1] = 2000};
 
-unsigned int i = 0;
-unsigned int j = 0;
-
-//Start state variables
-unsigned char fillBufferCount = 0;
+//Can alignment
+unsigned int timeToCanAlign = 0;
 
 //RADAR Scan Variables
 unsigned char readingsOnAngle = 0;
@@ -274,15 +292,24 @@ unsigned int  avgAnomalyDistance = 64000;
 unsigned int  expectedCanDistance = 64000;
 unsigned int  avgNewAnomalyDistance = 64000;
 
+//Circumnavigate
+unsigned char movement = 0;
+
+//Wall realignment
+unsigned char onAngle = 0;
+unsigned char minAngle = 0;
+
+
 //Flags for after event flags are dealt with and then results are used in stateControl()
 char buttonPressed = 0;
 char ultraReadLeft = 0;
 char ultraReadRight = 0;
 char ultraRADARRead = 0;
+
+
 //==============================================================================
 // Functions
 //------------------------------------------------------------------------------
-
 //Flag that button has been pressed
 #pragma vector=PORT1_VECTOR
 __interrupt void Port1_ISR(void)
@@ -424,7 +451,7 @@ __interrupt void Timer1_A1_ISR (void)
 int main(void)
 {
     //Stop watchdog timer
-    WDTCTL = WDTPW | WDTHOLD;
+     WDTCTL = WDTPW | WDTHOLD;
 
     //Setup User Interface
     setupButton();
@@ -464,6 +491,12 @@ int main(void)
 		
 	Schedule.ultraRightStart.sec = 0;
     Schedule.ultraRightStart.ms = -1;
+
+    Schedule.movementChange.sec = 0;
+    Schedule.movementChange.ms = -1;
+
+	Schedule.searchStart.sec = 0;
+	Schedule.searchStart.ms = -1;
 
 	//Start DC motor PWM schedules but set both motors output to do nothing
     timeIncrement(&Schedule.pwmMotorDrive, motorDrive.pwm.aSec, motorDrive.pwm.aMs);
@@ -514,6 +547,20 @@ void checkSchedule()
         Schedule.stateChange.sec = 0;
         Schedule.stateChange.ms = -1;
     }
+	
+	//Time for car to start searching for can and not just driving forward
+    if(isTime(Schedule.searchStart))
+    {
+		//Attend to in checkFlags()
+        if (state == SEARCH)
+        {
+            search = 1;
+        }
+		
+		//Disable schedule
+        Schedule.searchStart.sec = 0;
+        Schedule.searchStart.ms = -1;
+    }
 
     if (isTime(Schedule.ultraLeftStart))
     {
@@ -542,6 +589,15 @@ void checkSchedule()
         Schedule.ultraRADARStart.ms = -1;
     }
 	
+	if (isTime(Schedule.movementChange))
+    {
+        movement++;
+
+        //Disable schedule
+        Schedule.movementChange.sec = 0;
+        Schedule.movementChange.ms = -1;
+    }
+
 	//Time to check button debounce
     if(isTime(Schedule.debounce))
     {
@@ -608,7 +664,7 @@ void checkSchedule()
         {
             timeIncrement(&Schedule.pwmMotorSteer, motorSteer.pwm.aSec, motorSteer.pwm.aMs);
             motorSteer.pwm.state = 1;
-            if (motorDrive.pwm.aMs == 0)
+            if (motorSteer.pwm.aMs == 0)
             {
                 flag.motorSteer = 0;
             }
@@ -695,7 +751,7 @@ void checkFlags()
         }
         RADARDistances[0] = ultraRADAR.distance;
 
-        if (state != RADAR_SCAN)
+        if ((state != RADAR_SCAN) && (state != CAN_APPROACH) && (state != WALL_REALIGN))
         {
             //Check whether a single reading is an outlier & if so ignore it
             if (((RADARDistances[1] >= RADARDistances[2]+2000) || (RADARDistances[1] <= RADARDistances[2]-2000))
@@ -738,15 +794,15 @@ void checkFlags()
     }
 
 	//Change state
-    if (flag.stateChange)    //On button press start debounce
+    if (flag.stateChange)
     {
+        flag.stateChange = 0;
+
 		//Become next state
         previousState = state;
         state = nextState;
 		
 		changingState();
-		
-        flag.stateChange = 0;
     }
 }
 
@@ -764,9 +820,13 @@ void stateControl()
 		    //TA1CCTL1 &= ~CCIS_3;
 		    //TA1CCTL1 |= CCIS_0;
             timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
+            //nextState = SEARCH;
+
             nextState = SEARCH;
 			timeIncrement(&Schedule.stateChange, 1, 0);
 			buttonPressed = 0;
+			
+			timeIncrement(&(Schedule.searchStart), 1+TIME_BEFORE_SEARCHING, 0);
 		}
 		
 		//Use initial ultrasonic reading as distance to wall to maintain
@@ -797,12 +857,16 @@ void stateControl()
 		{
 			findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
 
-            if(avgReading < leftWall-CAN_DETECT_DIST)
+            if((avgReading < leftWall-CAN_DETECT_DIST) && (search))
             {
+                canPosition = LEFT;
                 //distToCan = avgReading;
                 //angleToCan = PWM_SERVO_LOWER;
+                timeToCanAlign = 999;
                 nextState = CAN_ALIGN;
                 flag.stateChange = 1;
+                Schedule.stateChange.sec = 0;
+                Schedule.stateChange.ms = -1;
             }
 			
 			//Use latest reading to keep aligned to wall
@@ -818,11 +882,14 @@ void stateControl()
 		if (ultraRADARRead)
 		{
 		    findDistanceAverage(1, RADAR_READINGS, RADARDistances);
-
+			
             if(avgReading < MAX_FRONT_DETECT)
             {
-                nextState = RADAR_SCAN;
-                flag.stateChange = 1;
+				canPosition = STRAIGHT;
+				nextState = RADAR_SCAN;
+				flag.stateChange = 1;
+				Schedule.stateChange.sec = 0;
+				Schedule.stateChange.ms = -1;
             }
 
             //Trigger next reading in 20 ms
@@ -891,113 +958,7 @@ void stateControl()
 		//Track can with RADAR
 		if (ultraRADARRead)
 		{
-			//Get an average
-			findDistanceAverage(1, RADAR_READINGS, RADARDistances);
-			
-			//When reading is close enough can is in front
-            if(avgReading < 500)
-            {
-                indicatorLEDOff(&LEDTop);
-                if ((TA1CCR2 > 1500-FACE_CAN_TOLERANCE) && (TA1CCR2 < 1500+FACE_CAN_TOLERANCE))   //If facing can
-                {
-					//Stop driving
-                    motorDrive.direction = OFF;
-                    motorSteer.direction = STRAIGHT;
-                    flag.motorDrive = 1;
-                    flag.motorSteer = 1;
-
-                    nextState = COLOUR_DETECT;
-                    flag.stateChange = 1;
-                }
-                else
-                {
-                    nextState = CAN_ALIGN;
-                    flag.stateChange = 1;
-                }
-            }
-			
-			//Behaviours whether can is lost
-			if (lostCan)	//If can is lost
-			{
-				if (avgReading < expectedCanDistance+300)	//Can refound
-				{
-				    motorDrive.direction = FORWARD;
-				    flag.motorDrive = 1;
-
-				    expectedCanDistance = avgReading;
-					lostCan = 0;
-					lostCount = 0;
-
-					indicatorLEDOn(&LEDTop);
-					timeIncrement(&Schedule.ultraRADARStart, 0, 20);
-				}
-				else	//Can still lost
-				{
-				    lostCan = 1;
-				    motorDrive.direction = OFF;
-				    flag.motorDrive = 1;
-
-				    if (lostCount == 2)
-				    {
-				        servoRADAR.direction ^= 1;
-				    }
-				    else if (lostCount == 6)
-				    {
-				        servoRADAR.direction ^= 1;
-				    }
-				    else if (lostCount > 6)
-					{
-					    nextState = RADAR_SCAN;
-					    flag.stateChange = 1;
-					}
-
-					indicatorLEDOff(&LEDTop);
-					servoTurn(&servoRADAR);
-					timeIncrement(&Schedule.ultraRADARStart, 0, 200);
-					lostCount++;
-				}
-			}
-			else	//If can is not lost
-			{
-				if (avgReading > expectedCanDistance+200)	//Now lost
-				{
-					lostCan = 1;
-					motorDrive.direction = OFF;
-					flag.motorDrive = 1;
-					
-					if (TA1CCR2 >= 1500)
-					{
-						servoRADAR.direction = 0;
-					}
-					else if  (TA1CCR2 < 1500)
-					{
-						servoRADAR.direction = 1;
-					}
-					else
-					{
-					    /*
-						nextState = RADAR_SCAN;
-						flag.stateChange = 1;*/
-					}
-
-                    indicatorLEDOff(&LEDTop);
-                    servoTurn(&servoRADAR);
-                    timeIncrement(&Schedule.ultraRADARStart, 0, 200);
-                    lostCount = 1;
-				}
-				else    //Still looking at can
-				{
-				    lostCan = 0;
-				    lostCount = 0;
-				    motorDrive.direction = FORWARD;
-				    flag.motorDrive = 1;
-
-				    expectedCanDistance = avgReading; //Update latest distance to can
-
-				    indicatorLEDOn(&LEDTop);
-					timeIncrement(&Schedule.ultraRADARStart, 0, 20);
-				}
-			}
+			canLock();
 			ultraRADARRead = 0;
 		}
 
@@ -1013,6 +974,17 @@ void stateControl()
     if (state == COLOUR_DETECT)
     {
         //Functionality done when changing to state
+        IRRead(&IR);
+
+        // Decide HIT or AVOID depending on BLACK or WHITE can
+        if (IR.colour)
+        {
+            indicatorLEDOn(&LEDTop);    //Black if 1
+        }
+        else
+        {
+            indicatorLEDOff(&LEDTop);   //White if 0
+        }
 
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
         if (buttonPressed)
@@ -1034,13 +1006,123 @@ void stateControl()
     }
 
 //AVOID CAN IF WHITE======================================================================
-    if (state == CAN_AVOID)
+    if (state == CIRCUMNAVIGATE)
     {
+		circumnavigate();
+		
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
         if (buttonPressed)
         {
             state = STOP;
             buttonPressed = 0;
+        }
+    }
+
+//GET ROUGHLY STRAIGHT WITH WALL AND DRIVE PAST DEALT WITH CAN===========================
+    if (state == WALL_REALIGN)
+    {
+		if (movement == 0)
+		{
+			//Realign to wall
+			motorDrive.direction = BACK;
+			motorDrive.pwm.aMs = 0.6*MOTOR_PWM_PERIOD;
+			flag.motorDrive = 1;
+
+			motorSteer.direction = canPosition;
+			flag.motorSteer = 1;
+			
+			if (Schedule.movementChange.ms == -1)
+            {
+			    timeIncrement(&(Schedule.movementChange), 1, 250);
+            }
+		}
+		
+		if (movement == 1)
+		{
+			motorDrive.direction = OFF;
+			flag.motorDrive = 1;
+
+			motorSteer.direction = STRAIGHT;
+			flag.motorSteer = 1;
+			
+			if (Schedule.ultraRADARStart.ms == -1)
+			{
+			    timeIncrement(&Schedule.ultraRADARStart, 0, 250);
+			}
+		}
+		
+		if (movement == 2)
+		{
+			motorDrive.direction = OFF;
+			flag.motorDrive = 1;
+
+			motorSteer.direction = STRAIGHT;
+			flag.motorSteer = 1;
+			
+			nextState = SEARCH;
+
+			if (Schedule.ultraLeftStart.ms == -1)
+            {
+                timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
+            }
+
+			if (Schedule.stateChange.ms == -1)
+            {
+                timeIncrement(&(Schedule.stateChange), 1, 0);
+            }
+			
+			if (Schedule.searchStart.ms == -1)
+            {
+                timeIncrement(&(Schedule.searchStart), 6, 0);
+            }
+		}
+		
+		if (ultraRADARRead)
+		{
+		    ultraRADARRead = 0;
+			RADARFindWall();
+		}
+
+        //Use initial ultrasonic reading as distance to wall to maintain
+        if (ultraReadLeft)
+        {
+			/*
+            ultraReadLeft = 0;
+			if (movement == 2)
+			{
+				//Turn until roughly straight again
+				if ((wallDistancesLeft[0] - wallDistancesLeft[1] < 100) && (wallDistancesLeft[1] - wallDistancesLeft[0] < 100))
+				{
+					movement = 1;
+				}
+				timeIncrement(&(Schedule.ultraLeftStart), 0, 40);
+			}
+			else
+			{
+				if (fillBufferCount < WALL_READINGS)
+				{
+					fillBufferCount++;
+					timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
+				}
+				else
+				{
+					findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
+					leftWall = avgReading;
+				}
+			}*/
+			
+            if (fillBufferCount < WALL_READINGS)
+            {
+                fillBufferCount++;
+                timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
+            }
+            else
+            {
+                findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
+                leftWall = avgReading;
+            }
+            ultraReadLeft = 0;
+            
         }
     }
 
@@ -1189,6 +1271,150 @@ void alignToWall()
     }
 }
 
+void    canLock()
+{
+    //Get an average
+    //findDistanceAverage(1, RADAR_READINGS, RADARDistances);
+
+    //When reading is close enough
+    if(RADARDistances[0] < FACE_CAN_DIST_TOLERANCE)
+    {
+        indicatorLEDOff(&LEDTop);
+        if ((TA1CCR2 > 1500-FACE_CAN_ANGLE_TOLERANCE) && (TA1CCR2 < 1500+FACE_CAN_ANGLE_TOLERANCE))   //If facing can
+        {
+            //Stop driving
+            motorDrive.direction = OFF;
+            motorSteer.direction = STRAIGHT;
+            flag.motorDrive = 1;
+            flag.motorSteer = 1;
+
+            nextState = COLOUR_DETECT;
+            flag.stateChange = 1;
+            Schedule.stateChange.sec = 0;
+            Schedule.stateChange.ms = -1;
+        }
+        else
+        {
+            nextState = CAN_ALIGN;
+            flag.stateChange = 1;
+            Schedule.stateChange.sec = 0;
+            Schedule.stateChange.ms = -1;
+            timeToCanAlign = 850;
+        }
+    }
+    else if (RADARDistances[0] < FACE_CAN_DIST_TOLERANCE+300) //If slightly further away but angle really bad
+    {
+        if ((TA1CCR2 < 1000) || (TA1CCR2 > 2000))
+        {
+            nextState = CAN_ALIGN;
+            flag.stateChange = 1;
+            Schedule.stateChange.sec = 0;
+            Schedule.stateChange.ms = -1;
+            timeToCanAlign = 850;
+        }
+    }
+
+    //Behaviours whether can is lost
+    if (lostCan)    //If can is lost
+    {
+        //if (avgReading < expectedCanDistance+400) //Can refound
+        if (((RADARDistances[0] < RADARDistances[1]-ANOMALY_DISTANCE) && (RADARDistances[0] < expectedCanDistance + 300))
+            || (RADARDistances[0] < expectedCanDistance + 300))
+        {
+            motorDrive.direction = FORWARD;
+            flag.motorDrive = 1;
+
+            expectedCanDistance = RADARDistances[0];
+            lostCan = 0;
+            lostCount = 0;
+
+            indicatorLEDOn(&LEDTop);
+            timeIncrement(&Schedule.ultraRADARStart, 0, 20);
+        }
+        else    //Can still lost
+        {
+            lostCan = 1;
+            motorDrive.direction = OFF;
+            flag.motorDrive = 1;
+
+            if (RADARDistances[0] > RADARDistances[1] + ANOMALY_DISTANCE) //Probably just moved off can
+            {
+                servoRADAR.direction ^= 1;
+            }
+            else if (lostCount > 4)
+            {
+                nextState = RADAR_SCAN;
+                flag.stateChange = 1;
+                Schedule.stateChange.sec = 0;
+                Schedule.stateChange.ms = -1;
+                /*
+                if (lostCount == 3)
+                {
+                    servoRADAR.direction ^= 1;
+                }
+                else if (lostCount == 6)
+                {
+                    servoRADAR.direction ^= 1;
+                }
+                else if (lostCount > 4)
+                {
+                    nextState = RADAR_SCAN;
+                    flag.stateChange = 1;
+                    Schedule.stateChange.sec = 0;
+                    Schedule.stateChange.ms = -1;
+                }
+                */
+            }
+
+            indicatorLEDOff(&LEDTop);
+            servoTurn(&servoRADAR);
+            timeIncrement(&Schedule.ultraRADARStart, 0, 200);
+            lostCount++;
+        }
+    }
+    else    //If can is not lost
+    {
+        if (RADARDistances[0] > expectedCanDistance+500)    //Now lost
+        {
+            lostCan = 1;
+            motorDrive.direction = OFF;
+            flag.motorDrive = 1;
+
+            if (TA1CCR2 >= 1500)
+            {
+                servoRADAR.direction = 0;
+            }
+            else if  (TA1CCR2 < 1500)
+            {
+                servoRADAR.direction = 1;
+            }
+            else
+            {
+                /*
+                nextState = RADAR_SCAN;
+                flag.stateChange = 1;*/
+            }
+
+            indicatorLEDOff(&LEDTop);
+            servoTurn(&servoRADAR);
+            timeIncrement(&Schedule.ultraRADARStart, 0, 200);
+            lostCount = 1;
+        }
+        else    //Still looking at can
+        {
+            lostCan = 0;
+            lostCount = 0;
+            motorDrive.direction = FORWARD;
+            flag.motorDrive = 1;
+
+            expectedCanDistance = RADARDistances[0]; //Update latest distance to can
+
+            indicatorLEDOn(&LEDTop);
+            timeIncrement(&Schedule.ultraRADARStart, 0, 20);
+        }
+    }
+}
+
 void RADAR()
 {
     readingsOnAngle++;
@@ -1200,6 +1426,7 @@ void RADAR()
         avgOldReading = avgReading;
         findDistanceAverage(1, RADAR_READINGS, RADARDistances);
         RADARAtEachAngle[anglesChecked] = avgReading;
+		//anglesChecked = 0; //XXX
 
         //FIND ANOMALIES
         //Is it start or continuation of an anomaly???
@@ -1265,8 +1492,12 @@ void RADAR()
             if (anomalyStart[0] == 0)
             {
                 servoCenter();
-                nextState = SEARCH;  //No can, so go back to previous behaviour (search or can align)
+                nextState = SEARCH;  //No can, so go back to searching
                 flag.stateChange = 1;
+                Schedule.stateChange.sec = 0;
+                Schedule.stateChange.ms = -1;
+				
+				timeIncrement(&Schedule.searchStart, 0, 50);
             }
             else    //Set servo to point at centre of closest anomaly found
             {
@@ -1326,6 +1557,8 @@ void RADAR()
                 TA1CCR2 = newAngle;
                 nextState = CAN_APPROACH;
                 flag.stateChange = 1;
+                Schedule.stateChange.sec = 0;
+                Schedule.stateChange.ms = -1;
             }
         }
     }
@@ -1363,16 +1596,15 @@ void    changingState()
 		//Count for wall buffer
 		fillBufferCount = 0;
 	}
-	
-	if (state == SPRINT)
-	{
-		
-	}
-	
+
 	if (state == SEARCH)
 	{
+		//Don't search and only follow wall for an amount of time
+		search = 0;
+		
 		//Start driving forward
 		motorDrive.direction = FORWARD;
+		motorDrive.pwm.aMs = SPEED_TOP;
 		flag.motorDrive = 1;
 
 		//Centre RADAR
@@ -1392,7 +1624,7 @@ void    changingState()
 		flag.motorSteer = 1;
 		
 		nextState = RADAR_SCAN;
-		timeIncrement(&Schedule.stateChange, 0, ALIGNMENT_TIME);
+		timeIncrement(&Schedule.stateChange, 0, timeToCanAlign);
 	}
 	
 	if (state == RADAR_SCAN)
@@ -1442,6 +1674,12 @@ void    changingState()
 	
 	if (state == COLOUR_DETECT)
 	{
+	    motorDrive.direction = OFF;
+        flag.motorDrive = 1;
+
+        motorSteer.direction = STRAIGHT;
+        flag.motorSteer = 1;
+
 		// Check IR sensor - get colour
 		IRRead(&IR);
 
@@ -1451,13 +1689,24 @@ void    changingState()
 			// Hit can if BLACK
 			nextState = REVERSE_CAN;
 			flag.stateChange = 1;
+			Schedule.stateChange.sec = 0;
+			Schedule.stateChange.ms = -1;
 			indicatorLEDOn(&LEDTop);
 		}
 		else
 		{
 			// Avoid can if WHITE
-			nextState = CAN_AVOID;
+		    if (canPosition  == STRAIGHT)
+		    {
+		        nextState = CIRCUMNAVIGATE;
+		    }
+		    else
+		    {
+		        nextState = WALL_REALIGN;
+		    }
 			flag.stateChange = 1;
+			Schedule.stateChange.sec = 0;
+			Schedule.stateChange.ms = -1;
 			indicatorLEDOff(&LEDTop);
 		}
 	}
@@ -1488,30 +1737,55 @@ void    changingState()
 		timeIncrement(&Schedule.stateChange, 0, HIT_TIME);
 	}
 	
-	if (state == CAN_AVOID)
+	if (state == CIRCUMNAVIGATE)
 	{
-		motorDrive.direction = BACK;
-		motorDrive.pwm.aMs = AVOID_SPEED*MOTOR_PWM_PERIOD;
-		flag.motorDrive = 1;
-
-		motorSteer.direction = LEFT;
-		flag.motorSteer = 1;
-		
-		nextState = SEARCH;
-		timeIncrement(&Schedule.stateChange, 0, AVOID_TIME);
+	    movement = 0;
 	}
 	
 	if (state == WALL_REALIGN)
 	{
+	    //XXX For testing
+	    //canPosition = LEFT;
+	    //TA1CCR2 = 1500 + servoRADAR.speed;
+
+		if (canPosition == LEFT)
+		{
+			servoRADAR.direction = 1;
+		}
+		else
+		{
+			servoRADAR.direction = 0;
+		}
+		minAngle = NUMBER_OF_ANGLES_CHECKED-((TA1CCR2 - PWM_SERVO_LOWER)/servoRADAR.speed);
+		onAngle = minAngle;
+		readingsOnAngle = 0;
+		
+		//Realign to wall
 		motorDrive.direction = BACK;
-		motorDrive.pwm.aMs = AVOID_SPEED*MOTOR_PWM_PERIOD;
+		motorDrive.pwm.aMs = REALIGN_SPEED*MOTOR_PWM_PERIOD;
 		flag.motorDrive = 1;
 
-		motorSteer.direction = LEFT;
+		motorSteer.direction = canPosition;
 		flag.motorSteer = 1;
 		
-		nextState = SEARCH;
-		timeIncrement(&Schedule.stateChange, 0, AVOID_TIME);
+		movement = 1;
+		
+		//timeIncrement(&(Schedule.movementChange), REALIGN_TIME_S, REALIGN_TIME_MS);
+		
+		//Get new wall distance to maintain after realigning
+		fillBufferCount = 0;
+        //timeIncrement(&(Schedule.ultraLeftStart), REALIGN_TIME_S, REALIGN_TIME_MS);
+		//timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
+        
+		//timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
+		
+		//Switch to search state when new wall value obtained
+		//nextState = SEARCH;
+        //timeIncrement(&Schedule.stateChange, 1+REALIGN_TIME_S, REALIGN_TIME_MS);
+        //buttonPressed = 0;
+        
+		//Drive forward for 5 seconds before looking for cans again
+        //timeIncrement(&(Schedule.searchStart), 6+REALIGN_TIME_S, 0);
 	}
 	
 	if (state == STOP)
@@ -1524,6 +1798,153 @@ void    changingState()
         flag.motorDrive = 1;
         flag.motorSteer = 1;
 	}
+}
+
+void circumnavigate()
+{
+	if (movement == 0)
+	{
+		motorDrive.direction = BACK;
+		motorDrive.pwm.aMs = CIRCUMNAVIGATE_SPEED*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = STRAIGHT;
+		flag.motorSteer = 1;
+
+		if ((Schedule.movementChange.sec == 0) && (Schedule.movementChange.ms == -1))
+		{
+			timeIncrement(&Schedule.movementChange, 0, 800);
+		}
+	}
+	else if (movement == 1)
+	{
+		motorDrive.direction = FORWARD;
+		motorDrive.pwm.aMs = CIRCUMNAVIGATE_SPEED*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = LEFT;
+		flag.motorSteer = 1;
+
+		if ((Schedule.movementChange.sec == 0) && (Schedule.movementChange.ms == -1))
+		{
+			timeIncrement(&Schedule.movementChange, 1, 250);
+		}
+	}
+	else if (movement == 2)
+	{
+		motorDrive.direction = FORWARD;
+		motorDrive.pwm.aMs = 0.5*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = RIGHT;
+		flag.motorSteer = 1;
+
+		if ((Schedule.movementChange.sec == 0) && (Schedule.movementChange.ms == -1))
+		{
+			timeIncrement(&Schedule.movementChange, 1, 0);
+		}
+	}
+	else if (movement == 3)
+	{
+		motorDrive.direction = FORWARD;
+		motorDrive.pwm.aMs = 0.4*MOTOR_PWM_PERIOD;
+		flag.motorDrive = 1;
+
+		motorSteer.direction = LEFT;
+		flag.motorSteer = 1;
+
+		if ((Schedule.movementChange.sec == 0) && (Schedule.movementChange.ms == -1))
+		{
+			timeIncrement(&Schedule.movementChange, 0, 600);
+		}
+	}
+	else
+	{
+		nextState = SEARCH;
+		flag.stateChange = 1;
+		timeIncrement(&Schedule.searchStart, 0, 50);
+	}
+}
+
+void RADARFindWall()
+{
+    readingsOnAngle++;
+    //When readings full at current angle
+    if (readingsOnAngle == RADAR_READINGS)
+    {
+        //Get average reading for angle set to
+        readingsOnAngle = 0;
+        avgOldReading = avgReading;
+        findDistanceAverage(1, RADAR_READINGS, RADARDistances);
+        RADARAtEachAngle[onAngle] = avgReading;
+
+    //RADARAtEachAngle[onAngle] = RADARDistances[0];
+        if (TA1CCR2 == PWM_SERVO_LOWER)
+        {
+            for (i = minAngle; i > 0 ; i--)
+            {
+                if (RADARAtEachAngle[i-1] < RADARAtEachAngle[minAngle])
+                {
+                    minAngle = i-1;
+                }
+            }
+            TA1CCR2 = PWM_SERVO_LOWER+(NUMBER_OF_ANGLES_CHECKED-minAngle)*servoRADAR.speed;
+            onAngle = minAngle;
+            if (minAngle == 0)
+            {
+                movement = 2;
+            }
+            else
+            {
+                movement = 0;
+            }
+        }
+        else if (TA1CCR2 == PWM_SERVO_UPPER)
+        {
+            for (i = minAngle; i < NUMBER_OF_ANGLES_CHECKED ; i++)
+            {
+                if (RADARAtEachAngle[i] < RADARAtEachAngle[minAngle])
+                {
+                    minAngle = i;
+                }
+                else if (RADARAtEachAngle[i] > RADARAtEachAngle[minAngle]+500)
+                {
+                    minAngle = i;
+                }
+                else if (RADARAtEachAngle[i] > RADARAtEachAngle[minAngle]+100)
+                {
+                    break;
+                }
+            }
+            TA1CCR2 = PWM_SERVO_LOWER+minAngle*servoRADAR.speed;
+            onAngle = minAngle;
+            if (minAngle == NUMBER_OF_ANGLES_CHECKED-1)
+            {
+                movement = 2;
+            }
+            else
+            {
+                movement = 0;
+            }
+        }
+        else
+        {
+            servoTurn(&servoRADAR);
+            if (servoRADAR.direction)
+            {
+                onAngle++;
+            }
+            else
+            {
+                onAngle--;
+            }
+            timeIncrement(&Schedule.ultraRADARStart, 0, 200);
+        }
+    }
+    else
+    {
+        timeIncrement(&Schedule.ultraRADARStart, 0, 20);
+    }
 }
 //==============================================================================
 // End of File : AutonomousCar/main.c
