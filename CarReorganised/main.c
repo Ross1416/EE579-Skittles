@@ -187,9 +187,9 @@ void    updateCarHeading(unsigned char direction, unsigned char angle, unsigned 
 //Wall readings control
 #define WALL_READINGS   5                   //Number of wall readings remembered (MAKE 1+2^x)
 #define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1)
-#define WALL_TOLERANCE  dist2pulse(2)       //Distance +- correct distance from wall
-#define CAN_DETECT_DIST dist2pulse(10)      //Distance closer then wall
-#define TIME_BEFORE_SEARCHING   1
+#define WALL_TOLERANCE  150                 //Distance +- correct distance from wall
+#define CAN_DETECT_DIST 500                 //Distance closer then wall
+#define TIME_BEFORE_SEARCHING   10
 #define WALL_ALIGN_SPEED_LOW    40
 #define WALL_ALIGN_SPEED_HIGH   45
 
@@ -238,7 +238,8 @@ struct flags flag           =   {0};       //Flag when something needed to be at
 
 //Hardware Variable Instantiation
 //Indicator LED (Port 2)
-struct IndicateLED LEDTop = {2, BIT5};
+struct IndicateLED LEDRed = {2, BIT5};
+struct IndicateLED LEDBlue = {2, BIT6};
 //DC Motor info (Port 1)
 struct MotorDC motorDrive = {0, BIT5, BIT4, {0, MOTOR_PWM_PERIOD, 0, 40, 1}};
 struct MotorDC motorSteer = {0, BIT6, BIT7, {0, MOTOR_PWM_PERIOD, 0, MOTOR_PWM_PERIOD, 1}};
@@ -251,6 +252,10 @@ struct Ultrasonic ultraRADAR = {0, {0, 0}, 0, BIT0, BIT2, 1};
 struct Servo servoRADAR = {BIT4, (PWM_SERVO_UPPER-PWM_SERVO_LOWER)/NUMBER_OF_ANGLES_CHECKED, 0};
 // IR info (Port 2)
 struct Infrared IR = {2, BIT3, 2};
+
+//Ultrasonic Tolerances
+int wallAlignTolerance = 0;
+int wallChangeThreshold = 0;
 
 //General Variables
 unsigned int avgReading = 0;
@@ -474,8 +479,11 @@ int main(void)
     //setupSwitch();
 
     //IndicatorLEDSetup
-    indicatorLEDSetup(&LEDTop);
-    indicatorLEDOff(&LEDTop);
+    indicatorLEDSetup(&LEDRed);
+    indicatorLEDSetup(&LEDBlue);
+
+    indicatorLEDOff(&LEDRed);
+    indicatorLEDOff(&LEDBlue);
 
     //indicatorLEDSetup(&LEDRight);
     //indicatorLEDOff(&LEDRight);
@@ -868,6 +876,13 @@ void stateControl()
             else
             {
                 leftWall = wallDistancesLeft[i];
+                wallChangeThreshold = 0;
+                wallAlignTolerance = 0;
+                for (i = 0; i< leftWall; i+=500)
+                {
+                    wallAlignTolerance += 40;
+                    wallChangeThreshold += 150;
+                }
 
                 //Use cardboard to calibrate sensors to recognise where closest wall will be
                  closestWallLeft= leftWall-300;
@@ -901,26 +916,60 @@ void stateControl()
 //FOLLOW WALL WHILST LOOKING FOR CANS========================================================
 	if(state == SEARCH)
 	{
-		//Drive forward at start (Done in state change)
+	    if (movement == 1)
+	    {
+	        movement = 0;
+	        updateCarHeading(FORWARD, STRAIGHT, 45);
+	        turnState = STRAIGHT;
+
+	        indicatorLEDOn(&LEDRed);
+
+	        //Trigger next reading in 20 ms
+	        timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
+	    }
 
 		//Take ultrasonic readings to wall to stay aligned and if can is past on left
 		if (ultraReadLeft)
 		{
+		    if (search)
+		    {
+		        indicatorLEDOn(&LEDBlue);
+		    }
+		    else
+		    {
+		        indicatorLEDOff(&LEDBlue);
+		    }
+
 			findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
 
 			//For changes where wall is
-			if (((avgReading > leftWall + 700) || (avgReading < leftWall - 700))
-			    && (avgReading > closestWallLeft))
+			if (((avgReading > leftWall + wallChangeThreshold) || (avgReading < leftWall - wallChangeThreshold))
+			    && (avgReading < closestWallLeft) && (search == 0))  //When measurement is closer then wall but not searching
 			{
 			    leftWall = avgReading;
-			}
-			else if (((avgReading > leftWall + 700) || (avgReading < leftWall - 700))
-	                && (avgReading < closestWallLeft) && (search))
-			{
-			    leftWall = avgReading;
+			    wallChangeThreshold = 0;
+			    wallAlignTolerance = 0;
+			    for (i = 0; i< leftWall; i+=500)
+			    {
+			        wallAlignTolerance += 40;
+			        wallChangeThreshold += 150;
+			    }
 			}
 
-            if((avgReading < closestWallLeft-CAN_DETECT_DIST) && (search))
+			if (((avgReading > leftWall + wallChangeThreshold) || (avgReading < leftWall - wallChangeThreshold))
+	                && (avgReading > closestWallLeft))   //When change is further away then closest wall must be change in wall geometry
+			{
+			    leftWall = avgReading;
+			    wallChangeThreshold = 0;
+                wallAlignTolerance = 0;
+                for (i = 0; i< leftWall; i+=500)
+                {
+                    wallAlignTolerance += 40;
+                    wallChangeThreshold += 150;
+                }
+			}
+
+            if((search) && (avgReading < closestWallLeft-wallAlignTolerance))
             {
                 canPosition = LEFT;
                 //distToCan = avgReading;
@@ -936,9 +985,11 @@ void stateControl()
 			//Use latest reading to keep aligned to wall
 			alignToWall();
 
-		    //Trigger next reading in 20 ms
-		    timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
-
+			if (Schedule.movementChange.ms == -1)
+			{
+			    //Trigger next reading in 20 ms
+                timeIncrement(&(Schedule.ultraRADARStart), 0, 20);
+			}
 			ultraReadLeft = 0;
 		}
 		
@@ -1027,11 +1078,13 @@ void stateControl()
         // Decide HIT or AVOID depending on BLACK or WHITE can
         if (IR.colour)
         {
-            indicatorLEDOn(&LEDTop);    //Black if 1
+            indicatorLEDOff(&LEDBlue);
+            indicatorLEDOn(&LEDRed);    //Black if 1
         }
         else
         {
-            indicatorLEDOff(&LEDTop);   //White if 0
+            indicatorLEDOn(&LEDBlue);
+            indicatorLEDOff(&LEDRed);   //White if 0
         }
 
         //Stop if button pressed (FOR TESTING IF FAILS TO STOP)
@@ -1071,16 +1124,18 @@ void stateControl()
     {
         if (movement == 0)
         {
+            indicatorLEDOff(&LEDRed);
             fillBufferCount = 0;
             //Guess time to move back and away from can for
             updateCarHeading(BACK, canPosition, 40);
             if (Schedule.movementChange.ms == -1)
             {
-                timeIncrement(&(Schedule.movementChange), 1, 200);
+                timeIncrement(&(Schedule.movementChange), 1, 400);
             }
         }
         else if (movement == 1)
         {
+            /*
             //Guess time to move back and away from can for
             if (canPosition == RIGHT)
             {
@@ -1089,7 +1144,7 @@ void stateControl()
             else
             {
                 updateCarHeading(FORWARD, RIGHT, 40);
-            }
+            }*/
 
             if (Schedule.movementChange.ms == -1)
             {
@@ -1110,7 +1165,7 @@ void stateControl()
             //Start moving forward and check if wall readings are constant
             if (checkStraightness == 0)
             {
-                indicatorLEDOn(&LEDTop);
+                //indicatorLEDOn(&LEDRed);
                 updateCarHeading(FORWARD, STRAIGHT, 45);
                 checkStraightness = 1;
                 fillBufferCount = 0;
@@ -1126,21 +1181,21 @@ void stateControl()
             if (fillBufferCount < WALL_READINGS)
             {
                 fillBufferCount++;
-                timeIncrement(&(Schedule.ultraLeftStart), 0, 100);
+                timeIncrement(&(Schedule.ultraLeftStart), 0, 50);
             }
             else
             {
-                indicatorLEDOff(&LEDTop);
+                //indicatorLEDOff(&LEDRed);
                 fillBufferCount = 0;
                 updateCarHeading(OFF, STRAIGHT, 50);
-                if(wallDistancesLeft[0] > wallDistancesLeft[4]+100) //If increasing then going further away from wall
+                if(wallDistancesLeft[0] > wallDistancesLeft[4]+150) //If increasing then going further away from wall
                 {
                     checkStraightness = 0;
                     updateCarHeading(FORWARD, LEFT, 45);
                     movement = 2;
                     timeIncrement(&(Schedule.movementChange), 0, 250);
                 }
-                else if (wallDistancesLeft[0] < wallDistancesLeft[4]-100)
+                else if (wallDistancesLeft[0] < wallDistancesLeft[4]-150)
                 {
                     checkStraightness = 0;
                     updateCarHeading(FORWARD, RIGHT, 45);
@@ -1149,12 +1204,19 @@ void stateControl()
                 }
                 else
                 {
-                    indicatorLEDOn(&LEDTop);
+                    indicatorLEDOn(&LEDRed);
                     nextState = SEARCH;
                     flag.stateChange = 1;
                     search = 0;
-                    timeIncrement(&(Schedule.searchStart), 5, 500);
+                    timeIncrement(&(Schedule.searchStart), 5, 0);
                     leftWall = wallDistancesLeft[0];
+                    wallChangeThreshold = 0;
+                    wallAlignTolerance = 0;
+                    for (i = 0; i< leftWall; i+=500)
+                    {
+                        wallAlignTolerance += 40;
+                        wallChangeThreshold += 150;
+                    }
                     closestWallLeft = leftWall;     //I know this is wrong but doing best to get back on track and wall geometry could be an issue
                 }
             }
@@ -1257,13 +1319,37 @@ void setupTimerRADAR()
 void alignToWall()
 {
     char turnStatePrevious = turnState;
+    /*
+    unsigned char increasing = 0;
+    unsigned char decreasing = 0;
+    for (j=1; j<WALL_READINGS; j++)
+    {
+        if (wallDistancesLeft[j] < wallDistancesLeft[j-1]-50)
+        {
+            decreasing++;
+        }
+        else if (wallDistancesLeft[j] > wallDistancesLeft[j-1]+50)
+        {
+            increasing++;
+        }
+    }
 
-    //When state change is based on measured distance to wall
-    if(wallDistancesLeft[0] < leftWall-WALL_TOLERANCE)       //When drifted closer to wall
+    if (decreasing >= WALL_READINGS-1)
     {
         turnState = AWAY;
     }
-    else if(wallDistancesLeft[0] > leftWall+WALL_TOLERANCE)  //When drifted further from wall
+    else if (increasing >= WALL_READINGS-1)
+    {
+        turnState = CLOSE;
+    }*/
+
+    //When state change is based on measured distance to wall
+
+    if(wallDistancesLeft[0] < leftWall-wallAlignTolerance)       //When drifted closer to wall
+    {
+        turnState = AWAY;
+    }
+    else if(wallDistancesLeft[0] > leftWall+wallAlignTolerance)  //When drifted further from wall
     {
         turnState = CLOSE;
     }
@@ -1301,6 +1387,7 @@ void alignToWall()
             updateCarHeading(3, RIGHT, WALL_ALIGN_SPEED_LOW);
             break;
         }
+        timeIncrement(&Schedule.movementChange, 0, 30);
     }
 }
 
@@ -1312,7 +1399,7 @@ void    canLock()
     //When reading is close enough
     if(RADARDistances[0] < FACE_CAN_DIST_TOLERANCE)
     {
-        indicatorLEDOff(&LEDTop);
+        indicatorLEDOff(&LEDRed);
         if ((TA1CCR2 > 1500-FACE_CAN_ANGLE_TOLERANCE) && (TA1CCR2 < 1500+FACE_CAN_ANGLE_TOLERANCE))   //If facing can
         {
             //Stop driving
@@ -1369,7 +1456,7 @@ void    canLock()
             lostCan = 0;
             lostCount = 0;
 
-            indicatorLEDOn(&LEDTop);
+            indicatorLEDOn(&LEDRed);
             timeIncrement(&Schedule.ultraRADARStart, 0, 20);
         }
         else    //Can still lost
@@ -1388,7 +1475,7 @@ void    canLock()
                 Schedule.stateChange.ms = -1;
             }
 
-            indicatorLEDOff(&LEDTop);
+            indicatorLEDOff(&LEDRed);
             servoTurn(&servoRADAR);
             timeIncrement(&Schedule.ultraRADARStart, 0, 200);
             lostCount++;
@@ -1417,7 +1504,7 @@ void    canLock()
                 flag.stateChange = 1;*/
             }
 
-            indicatorLEDOff(&LEDTop);
+            indicatorLEDOff(&LEDRed);
             servoTurn(&servoRADAR);
             timeIncrement(&Schedule.ultraRADARStart, 0, 200);
             lostCount = 1;
@@ -1429,7 +1516,7 @@ void    canLock()
 
             expectedCanDistance = RADARDistances[0]; //Update latest distance to can
 
-            indicatorLEDOn(&LEDTop);
+            indicatorLEDOn(&LEDRed);
             timeIncrement(&Schedule.ultraRADARStart, 0, 20);
         }
     }
@@ -1462,12 +1549,12 @@ void RADAR()
                 {
                     anomalyPositions[anglesChecked] = 1;
                     anomalyStart[anomalyNumber] = anglesChecked;
-                    indicatorLEDOn(&LEDTop);
+                    indicatorLEDOn(&LEDRed);
                 }
                 else
                 {
                     anomalyPositions[anglesChecked] = 0;
-                    indicatorLEDOff(&LEDTop);
+                    indicatorLEDOff(&LEDRed);
                 }
             }
             else    //If last reading is anomaly
@@ -1478,7 +1565,7 @@ void RADAR()
                     anomalyPositions[anglesChecked] = 0;
                     anomalyEnd[anomalyNumber] = anglesChecked;
                     anomalyNumber++;
-                    indicatorLEDOff(&LEDTop);
+                    indicatorLEDOff(&LEDRed);
                 }
                 else if (avgReading < avgOldReading-ANOMALY_DISTANCE) //Start of a new anomaly if in front of old anomaly
                 {
@@ -1486,12 +1573,12 @@ void RADAR()
                     anomalyEnd[anomalyNumber] = anglesChecked;
                     anomalyNumber++;
                     anomalyStart[anomalyNumber] = anglesChecked;
-                    indicatorLEDToggle(&LEDTop);
+                    indicatorLEDToggle(&LEDRed);
                 }
                 else
                 {
                     anomalyPositions[anglesChecked] = 1;
-                    indicatorLEDOn(&LEDTop);
+                    indicatorLEDOn(&LEDRed);
                 }
             }
         }
@@ -1706,7 +1793,7 @@ void    changingState()
 			flag.stateChange = 1;
 			Schedule.stateChange.sec = 0;
 			Schedule.stateChange.ms = -1;
-			indicatorLEDOn(&LEDTop);
+			indicatorLEDOn(&LEDRed);
 		}
 		else
 		{
@@ -1722,7 +1809,7 @@ void    changingState()
 			flag.stateChange = 1;
 			Schedule.stateChange.sec = 0;
 			Schedule.stateChange.ms = -1;
-			indicatorLEDOff(&LEDTop);
+			indicatorLEDOff(&LEDRed);
 		}
 	}
 	
@@ -1749,7 +1836,7 @@ void    changingState()
 	
 	if (state == WALL_REALIGN)
 	{
-	    indicatorLEDOff(&LEDTop);
+	    indicatorLEDOff(&LEDRed);
 	    movement = 0;
 		Schedule.movementChange.ms = -1;
 		
@@ -1761,7 +1848,7 @@ void    changingState()
 	
 	if (state == STOP)
 	{
-		indicatorLEDOff(&LEDTop);
+		indicatorLEDOff(&LEDRed);
 
 		//Stop all motors and readings
 		updateCarHeading(OFF, STRAIGHT, 40);

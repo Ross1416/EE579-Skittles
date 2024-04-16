@@ -17,10 +17,14 @@ void indicatorLEDSetup(struct IndicateLED *LED)
     if (LED->port == 1)
     {
         P1DIR |= LED->pin;
+        P1SEL &=~ LED->pin;
+        P1SEL2 &=~ LED->pin;
     }
     else if (LED->port == 2)
     {
         P2DIR |= LED->pin;
+        P2SEL &=~ LED->pin;
+        P2SEL2 &=~ LED->pin;
     }
 }
 
