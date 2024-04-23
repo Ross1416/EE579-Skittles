@@ -22,7 +22,6 @@ void motorOutput(struct MotorDC *motor)
 {
     if (motor->pwm.state == 0)
     {
-        //P1OUT |= motor->pinA + motor->pinB;
         P1OUT &= ~(motor->pinA + motor->pinB);
     }
     else
@@ -31,7 +30,6 @@ void motorOutput(struct MotorDC *motor)
         {
         case 0:
             P1OUT &= ~(motor->pinA + motor->pinB);
-            //P1OUT |= motor->pinA + motor->pinB;
             break;
         case 1:
             P1OUT |= motor->pinA;

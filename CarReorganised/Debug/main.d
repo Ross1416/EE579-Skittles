@@ -9,7 +9,7 @@ main.obj: C:/ti/ccs1240/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intr
 main.obj: ../DCMotor.h
 main.obj: ../Servo.h
 main.obj: ../Ultrasonic.h
-main.obj: ../IndicatorLED.h
+main.obj: ../UserInterface.h
 main.obj: ../Infrared.h
 
 ../main.c:
@@ -30,7 +30,7 @@ C:/ti/ccs1240/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intrinsics_leg
 
 ../Ultrasonic.h:
 
-../IndicatorLED.h:
+../UserInterface.h:
 
 ../Infrared.h:
 
