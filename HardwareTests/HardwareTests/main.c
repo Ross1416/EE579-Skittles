@@ -18,7 +18,7 @@ Change History
 --------------------------------------------------------------------------------
 22-APR-2024 andrewlaw9178 created to have hardware component test in 1 location
 25-APR-2024 andrewlaw9178 fixed LED and button and added drive tests
-26-APR-2024 andrewlaw9178 added steer test
+26-APR-2024 andrewlaw9178 added steer and servo test
 --------------------------------------------------------------------------------
 */
 
@@ -26,15 +26,16 @@ Change History
 #include "Common.h"
 
 // Define Hardware ports
-#define IND_LED_PORT            2               // Located at P2.5
+#define IND_LED_PORT            2               // Located at Port 2
 #define IND_LED_PIN             BIT5            // Located at P2.5
-#define START_STOP_BUTTON_PORT  1               // Located at P1.3
+#define START_STOP_BUTTON_PORT  1               // Located at Port 1
 #define START_STOP_BUTTON_PIN   BIT3            // Located at P1.3
 #define MOTOR_DRIVE_ANODE       BIT5            // Located at P1.4
 #define MOTOR_DRIVE_CATHODE     BIT4            // Located at P1.5
 #define MOTOR_STEER_ANODE       BIT6            // Located at P1.6
 #define MOTOR_STEER_CATHODE     BIT7            // Located at P1.7
-
+#define SERVO_PORT              2               // Located at Port 2
+#define SERVO_PIN               BIT4            // Located at P2.4
 void selectComponent(char component)
 {
     switch(component)
@@ -56,6 +57,10 @@ void selectComponent(char component)
         case '4':
             // Steer test has been selected
             steerTest(MOTOR_STEER_ANODE, MOTOR_STEER_CATHODE);
+            break;
+        case '5':
+            // Serv test has been selected
+            servoTest(SERVO_PORT, SERVO_PIN);
             break;
         default:
             // Handle invalid option
@@ -80,7 +85,7 @@ int main(void)
         // Enter 8 for RIGHT ultrasonic test
         // Enter 9 for Infrared test
 
-        selectComponent('4');
+        selectComponent('5');
     }
 }
 

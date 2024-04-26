@@ -13,6 +13,7 @@ C_SRCS += \
 ../Common.c \
 ../DCMotor.c \
 ../IndicatorLED.c \
+../Servo.c \
 ../main.c 
 
 C_DEPS += \
@@ -20,6 +21,7 @@ C_DEPS += \
 ./Common.d \
 ./DCMotor.d \
 ./IndicatorLED.d \
+./Servo.d \
 ./main.d 
 
 OBJS += \
@@ -27,6 +29,7 @@ OBJS += \
 ./Common.obj \
 ./DCMotor.obj \
 ./IndicatorLED.obj \
+./Servo.obj \
 ./main.obj 
 
 OBJS__QUOTED += \
@@ -34,6 +37,7 @@ OBJS__QUOTED += \
 "Common.obj" \
 "DCMotor.obj" \
 "IndicatorLED.obj" \
+"Servo.obj" \
 "main.obj" 
 
 C_DEPS__QUOTED += \
@@ -41,6 +45,7 @@ C_DEPS__QUOTED += \
 "Common.d" \
 "DCMotor.d" \
 "IndicatorLED.d" \
+"Servo.d" \
 "main.d" 
 
 C_SRCS__QUOTED += \
@@ -48,6 +53,7 @@ C_SRCS__QUOTED += \
 "../Common.c" \
 "../DCMotor.c" \
 "../IndicatorLED.c" \
+"../Servo.c" \
 "../main.c" 
 
 

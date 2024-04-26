@@ -18,7 +18,7 @@ Change History
 --------------------------------------------------------------------------------
 22-APR-2024 andrewlaw9178 created to have hardware component test in 1 location
 25-APR-2024 andrewlaw9178 fixed LED and button and added drive tests
-26-APR-2024 andrewlaw9178 added steer test
+26-APR-2024 andrewlaw9178 added steer and servo test
 --------------------------------------------------------------------------------
 */
 #ifndef COMMON_H
@@ -28,6 +28,7 @@ Change History
 #include "IndicatorLED.h"
 #include "Button.h"
 #include "DCMotor.h"
+#include "Servo.h"
 
 // Available clock information
 #define SMCK_FREQ      1000000
@@ -46,6 +47,13 @@ Change History
 #define SPEED_SLOW          0.4*MOTOR_PWM_PERIOD                        //Slower speed when changing direction.
 unsigned int movementStage;                                             // To go through each drive stage
 unsigned int movementStageSteer;                                        // To go through each steer stage
+
+
+// Other information for servo
+#define CLOCK_USED_ULTRASONIC   SMCK_FREQ
+
+// Servo PWM limits
+#define NUMBER_OF_ANGLES_CHECKED 15
 
 // Defines structure for program timing
 struct Time {
@@ -72,6 +80,9 @@ struct Scheduler {
 
     // Time when next steer movement should occur
     struct Time nextMovementSteer;
+
+    // Change angle of servo
+    struct Time turnServo;
 };
 
 // Defines flags for hardware and software source to alert system to changes or readings
@@ -90,6 +101,9 @@ struct Flags {
 
     // When state of steer motor needs changed (e.g FORWARD to STOP)
     char motorSteer;
+
+    // When angle of servo should change
+    char servoMove;
 };
 
 // Indicator LED
@@ -102,9 +116,13 @@ struct Button startButton;
 struct MotorDC motorDrive;
 struct MotorDC motorSteer;
 
+// Servo info (Port 2)
+struct Servo servoA;
+
 //Prototypes for common.c (background)
 extern void setupTimerSchedule();
 extern void timeIncrement(struct Time *time, int sec, int ms);
+extern void setupTimerRADAR();
 
 // Prototypes for main.c
 extern void indicatorLEDTest(int port, int pin);
@@ -112,6 +130,7 @@ extern void startButtonTest(int port, int pin);
 extern void initLEDPHY(int port, int pin);
 extern void driveTest(int anode, int diode);
 extern void steerTest(int anode, int diode);
+extern void servoTest(int port, int pin);
 
 #endif // COMMON_H
 

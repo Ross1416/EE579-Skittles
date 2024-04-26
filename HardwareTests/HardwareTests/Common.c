@@ -18,7 +18,7 @@ Change History
 --------------------------------------------------------------------------------
 22-APR-2024 andrewlaw9178 created to have hardware component test in 1 location
 25-APR-2024 andrewlaw9178 fixed LED and button and added drive tests
-26-APR-2024 andrewlaw9178 added steer test
+26-APR-2024 andrewlaw9178 added steer and servo test
 --------------------------------------------------------------------------------
 */
 // External libraries
@@ -52,6 +52,31 @@ void setupTimerSchedule()
 
     TA0CTL &= ~TAIFG;                                                   // Clear interrupt
     TA0CTL &= ~TAIE;                                                    // Disable interrupt on timer edge
+}
+
+// Set up Timer1 A1 interrupt
+void setupTimerRADAR()
+{
+    if(CLOCK_USED_ULTRASONIC == SMCK_FREQ)
+    {
+        TA1CTL |= TASSEL_2;         // f = 1 MHz
+    }
+    else
+    {
+        TA1CTL |= TASSEL_1;         // f = 32.768 kHz
+    }
+
+    TA1CTL &= ~TAIFG;   //Clear interrupt
+    TA1CTL &= ~TAIE;    //Disable interrupt on timer edge
+
+    TA1CCTL0 &= ~(CCIFG+CCIE);
+    TA1CCTL2 &= ~CCIE;
+    TA1CCTL2 &= ~CCIFG;
+
+    TA1CCTL2 |= CCIE;   //Enable interrupt to know when wraps
+
+    //Count to TA1CCR0 (Defined in servo setup)
+    TA1CTL |= MC_1;
 }
 
 // Used to schedule events
@@ -303,6 +328,17 @@ void checkSchedule()
         // Schedule next movement
         timeIncrement(&Schedule.nextMovementSteer, 0, 500);
     }
+
+    // Check if time to move servo
+    if(isTime(Schedule.turnServo))
+    {
+        // Carry out check in checkFlags()
+        flag.servoMove = 1;
+
+        //Disable schedule
+        Schedule.turnServo.sec = 0;
+        Schedule.turnServo.ms = -1;
+    }
 }
 
 // Checks if button has been pressed or if debouncing has occured
@@ -311,7 +347,7 @@ void checkFlags()
     // Debounce wait has finished
     if(flag.debounce)
     {
-        if((P1IN & startButton.pin) != startButton.pin)             // Button still pressed after debounce
+        if((P1IN & startButton.pin) != startButton.pin)                 // Button still pressed after debounce
         {
             indicatorLEDToggle(&indicatorLED);                          // Toggle indicator LED
         }
@@ -344,6 +380,26 @@ void checkFlags()
         //Alter behaviour as has been updated
         motorOutput(&motorSteer);
         flag.motorSteer = 0;
+    }
+
+    // Turn servo
+    if(flag.servoMove)
+    {
+        if(TA1CCR2 >= PWM_SERVO_UPPER)                                  // If reached upper bound
+        {
+            servoA.direction = 0;                                       // Turn anticlockwise
+        }
+        else if (TA1CCR2 <= PWM_SERVO_LOWER)
+        {
+            servoA.direction = 1;                                       // Turn anticlockwise
+        }
+
+        servoTurn(&servoA);
+
+        // Move servo after
+        timeIncrement(&Schedule.turnServo, 0, 120);
+
+        flag.servoMove = 0;
     }
 }
 
@@ -494,6 +550,45 @@ void steerTest(int anode, int cathode)
     }
 }
 
+// Execute servo test
+void servoTest(int port, int pin)
+{
+    // Servo info (Port 2) and PWM on Port 2.4, angle to be turned, initially turn anti-clockwise
+    servoA.pwmPort = port;
+    servoA.pwmPin = pin;
+    servoA.speed = (PWM_SERVO_UPPER-PWM_SERVO_LOWER)/NUMBER_OF_ANGLES_CHECKED;
+    servoA.direction = 0;
+
+    // Setup device
+    servoSetup(&servoA);                                                // Set up port and timing for the servo and set servo to turn clockwise
+    setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
+    setupTimerRADAR();                                                  // Set up Timer1 A1
+
+    // Disable flag
+    flag.servoMove = 0;
+
+    // Start servo at centre and wait 0.12s
+    servoCenter();
+    timeIncrement(&Schedule.turnServo, 0, 120);
+
+    //Enable global interrupts
+    __bis_SR_register(GIE);
+
+    //Main loop
+    while(1)
+    {
+        if (flag.timerA0)                                               // Every 2ms timer intterupt triggers (producing soft clock)
+        {
+            checkSchedule();                                            // If button has been pressed wait for debouncing time to verify
+            flag.timerA0 = 0;
+        }
+        else
+        {
+            checkFlags();                                               // Check if button has been pressed, and if still pressed after 20ms
+        }
+    }
+}
+
 // Flag that button has been pressed
 #pragma vector=PORT1_VECTOR
 __interrupt void Port1_ISR(void)
@@ -517,6 +612,22 @@ __interrupt void Timer0_A0_ISR(void)
     flag.timerA0 = 1;                                               // Tells checkFlags to see if program needs to action anything
     __low_power_mode_off_on_exit();
     TA0CCTL0 &= ~CCIFG;
+}
+
+// Used for Ultrasonic capture compare - to get distance
+// Also used to move servo - pwm signal determines position of servo
+#pragma vector=TIMER1_A1_VECTOR
+__interrupt void Timer1_A1_ISR (void)
+{
+    switch(TA1IV)
+    {
+    case 0xA:                                                       // OVERFLOW
+        TA1CTL &= ~TAIFG;                                           // Clear CCR1 flag
+        break;
+    case TA1IV_TACCR2:                                              // TA1CCR2 (No interrupt as used in servo PWM)
+        TA1CCTL2 &= ~CCIFG;                                         // Clear CCR2 flag
+        break;
+    }
 }
 
 //==============================================================================

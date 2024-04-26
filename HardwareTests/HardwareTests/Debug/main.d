@@ -10,6 +10,7 @@ main.obj: C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intr
 main.obj: C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intrinsics_legacy_undefs.h
 main.obj: ../Button.h
 main.obj: ../DCMotor.h
+main.obj: ../Servo.h
 
 ../main.c:
 
@@ -30,4 +31,6 @@ C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intrinsics_leg
 ../Button.h:
 
 ../DCMotor.h:
+
+../Servo.h:
 

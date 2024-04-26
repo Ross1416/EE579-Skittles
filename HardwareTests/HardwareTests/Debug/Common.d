@@ -10,6 +10,7 @@ Common.obj: ../Common.h
 Common.obj: ../IndicatorLED.h
 Common.obj: ../Button.h
 Common.obj: ../DCMotor.h
+Common.obj: ../Servo.h
 
 ../Common.c:
 
@@ -30,4 +31,6 @@ C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include/intrinsics_leg
 ../Button.h:
 
 ../DCMotor.h:
+
+../Servo.h:
 
