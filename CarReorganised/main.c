@@ -31,7 +31,7 @@ Change History
 16-APR-2024 SARK fixed changing wall position bug by aligning to wall with changes in
             reading instead of absolute distance to wall
 22-APR-2024 SARK implemented left and right ultrasonic sensors as well as allowing
-            "wall to align to" to be controllable
+            "wall to align to" to be controllable by switch
 --------------------------------------------------------------------------------
 */
 
@@ -104,7 +104,6 @@ struct Scheduler {
 
     //Time to change movement
     struct Time movementChange;
-	struct Time useNumber;
 	
 	//Time to start searching for cans
 	struct Time searchStart;
@@ -161,7 +160,7 @@ void    updateCarHeading(unsigned char direction, unsigned char angle, unsigned 
 #define isTime(X) ((currentTime.sec == X.sec) && (currentTime.ms == X.ms))
 
 //Car States
-#define CLOSEST_WALL    0
+#define CAN_CALIBRATION    0
 #define READY       	1
 #define SEARCH      	2
 #define CAN_ALIGN   	3
@@ -194,10 +193,8 @@ void    updateCarHeading(unsigned char direction, unsigned char angle, unsigned 
 
 //Wall readings control
 #define WALL_READINGS   5                   //Number of wall readings remembered (MAKE 1+2^x)
-#define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1)
-#define WALL_TOLERANCE  150                 //Distance +- correct distance from wall
-#define CAN_DETECT_DIST 500                 //Distance closer then wall
-#define TIME_BEFORE_SEARCHING   2
+#define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1), used to computationally effiecient find average
+#define TIME_BEFORE_SEARCHING   6           //
 #define FIND_SPEED    40
 #define SPRINT_SPEED  50
 
@@ -206,7 +203,7 @@ void    updateCarHeading(unsigned char direction, unsigned char angle, unsigned 
 
 //SONAR Reading control
 #define SONAR_READINGS   5					//Make equal to wall readings
-#define MAX_FRONT_DETECT 800
+#define MAX_FRONT_DETECT 1200
 #define ANOMALY_DISTANCE 500
 
 //SONAR SCANNING
@@ -225,17 +222,17 @@ void    updateCarHeading(unsigned char direction, unsigned char angle, unsigned 
 #define CAN_APPROACH_SPEED          40
 
 //REVERSE TIME FOR RUN UP TO CAN
-#define REVERSE_TIME   500
-#define REVERSE_SPEED  40
+#define REVERSE_TIME   750
+#define REVERSE_SPEED  45
 
 //HIT CAN
 #define HIT_TIME   900
 
 //CIRCUMNAVIGATE
-#define CIRCUMNAVIGATE_SPEED    40
+#define CIRCUMNAVIGATE_SPEED    45
 
 //REALIGN TO WALL
-#define REALIGN_SPEED   40
+//#define REALIGN_SPEED   40
 
 //==============================================================================
 // Global Variable Initialisation
@@ -275,9 +272,9 @@ unsigned int j = 0;
 unsigned char cansDealtWith = 0;
 
 //What car should be doing
-char previousState  =   CLOSEST_WALL;
-char state          =   CLOSEST_WALL;
-char nextState      =   CLOSEST_WALL;
+char previousState  =   CAN_CALIBRATION;
+char state          =   CAN_CALIBRATION;
+char nextState      =   CAN_CALIBRATION;
 
 //Calibrate Wall Variables
 unsigned char fillBufferCount = 0;
@@ -291,8 +288,9 @@ unsigned int  wallDistancesRight[WALL_READINGS] = {[0 ... WALL_READINGS-1] = 0};
 unsigned char canPosition = STRAIGHT;
 unsigned char search = 0;
 unsigned int SONARDistances[SONAR_READINGS] = {[0 ... SONAR_READINGS-1] = 2000};
-unsigned int closestWallLeft = 0;
-unsigned int closestWallRight = 0;
+unsigned int furthestCanLeft = 0;
+unsigned int furthestCanRight = 0;
+unsigned char firstCanFound = 0;
 
 //Can alignment
 unsigned int timeToCanAlignSec = 0;
@@ -321,7 +319,6 @@ unsigned char movement = 0;
 unsigned char furtherWall = STRAIGHT;
 
 //Wall realignment
-unsigned int useNumber = 0;
 unsigned int straightTime = 0;
 
 //Flags for after event flags are dealt with and then results are used in stateControl()
@@ -471,6 +468,53 @@ __interrupt void Timer1_A1_ISR (void)
     }
 }
 
+//Setup timer that the scheduler works on
+//  SONAR ultrasonic also functions on this timer
+void setupTimerSchedule()
+{
+    //Select clock using MACRO
+    if(CLOCK_USED_SCHEDULER == SMCK_FREQ)
+    {
+        TA0CTL |= TASSEL_2 + MC_1;              //SMCK  so f = 1 MHz, operating in up mode to TA0CCR0
+    }
+    else
+    {
+        TA0CTL |= TASSEL_1 + MC_1;              //ACLK  so f = 32768 Hz, operating in up mode to TA0CCR0
+    }
+    TA0CCTL0 |= 0x10;                                   //Interrupt occurs when TA0R reaches TA0CCR0
+    TA0CCR0 = CLOCK_USED_SCHEDULER*TIMER_INC_MS/1000;   //Set the count to schedule time, e.g 1 MHz*5ms = 5000
+    TA0CCTL0 &= ~CCIFG;                                 //Clear interrupt flags
+
+    TA0CTL &= ~TAIFG;   //Clear interrupt
+    TA0CTL &= ~TAIE;    //Disable interrupt on timer edge
+}
+
+//Setup timer that the PWM signal for the servo of the SONAR operates with
+//  Also the left and right ultrasonics work on this timer
+void setupTimerSONAR()
+{
+    //Select clock using MACRO
+    if(CLOCK_USED_ULTRASONIC == SMCK_FREQ)
+    {
+        TA1CTL |= TASSEL_2;         // f = 1 MHz
+    }
+    else
+    {
+        TA1CTL |= TASSEL_1;         // f = 32.768 kHz
+    }
+
+    TA1CTL &= ~TAIFG;   //Clear interrupt
+    TA1CTL &= ~TAIE;    //Disable interrupt on timer edge
+
+    TA1CCTL0 &= ~(CCIFG+CCIE);
+    TA1CCTL2 &= ~CCIE;
+    TA1CCTL2 &= ~CCIFG;
+
+    TA1CCTL0 |= CCIE;   //Enable interrupt to know when wraps
+
+    //Count to TA1CCR0 (Defined in servo setup)
+    TA1CTL |= MC_1;
+}
 
 int main(void)
 {
@@ -504,7 +548,7 @@ int main(void)
 	setupTimerSONAR();
     setupTimerSchedule();
 
-    //Disable Schedules
+    //Disable any initial unused Schedules
     Schedule.debounce.sec = 0;
     Schedule.debounce.ms = -1;
 
@@ -519,9 +563,6 @@ int main(void)
 
     Schedule.movementChange.sec = 0;
     Schedule.movementChange.ms = -1;
-
-    Schedule.useNumber.sec = 0;
-    Schedule.useNumber.ms = -1;
 
 	Schedule.searchStart.sec = 0;
 	Schedule.searchStart.ms = -1;
@@ -561,6 +602,31 @@ int main(void)
     }
 }
 
+//Function to set scheduled event. Input event to be scheduled and the time from now
+//at which it should occur.
+void timeIncrement(struct Time *time, int sec, int ms)
+{
+    //Always on next increment amount
+    ms += TIMER_INC_MS;
+    ms -= ms % TIMER_INC_MS;
+
+    //Add to current time and if more then max ms add to seconds
+    time->ms = currentTime.ms + ms;
+    while(time->ms >= SECOND_COUNT)
+    {
+        time->ms -= SECOND_COUNT;
+        sec++;
+    }
+
+    //Add to current time and if more then max wrap back to 0
+    time->sec = currentTime.sec + sec;
+    while(time->sec >= 300)
+    {
+        time->sec -= 300;
+    }
+}
+
+//Check whether it is time for a particular event to occur
 void checkSchedule()
 {
     int incSec = 0;
@@ -580,7 +646,7 @@ void checkSchedule()
 	//Time for car to start searching for can and not just driving forward
     if(isTime(Schedule.searchStart))
     {
-		//Attend to in checkFlags()
+		//Alters behaviour of search state()
         if (state == SEARCH)
         {
             search = 1;
@@ -591,10 +657,15 @@ void checkSchedule()
         Schedule.searchStart.ms = -1;
     }
 
+    //Time to trigger left ultrasonic
     if (isTime(Schedule.ultraLeftStart))
     {
+        //Trigger ultrasonic
         ultrasonicTrigger(&ultraLeft);
 
+        //Set a backup reading, code primarily works on doing something when a reading is returned
+        //Therefore, if a reading is missed car will misbehave. Backup only triggers if reading not found
+        //within 100 ms.
         timeIncrement(&Schedule.ultraLeftStartBackup, 0, 100);
 
         //Disable schedule
@@ -651,6 +722,9 @@ void checkSchedule()
         Schedule.ultraSONARStart.ms = -1;
     }
 	
+    //Inter-state variable that allows the car to adopt a different behaviour after
+    //so much time. For example, CIRCUMNAVIGATE does a number of movements to pass a
+    //can and schedules when to change car headings when this scheduled event ocurs.
 	if (isTime(Schedule.movementChange))
     {
         movement++;
@@ -659,17 +733,8 @@ void checkSchedule()
         Schedule.movementChange.sec = 0;
         Schedule.movementChange.ms = -1;
     }
-	
-	if (isTime(Schedule.useNumber))
-    {
-        useNumber++;
 
-        //Disable schedule
-        Schedule.useNumber.sec = 0;
-        Schedule.useNumber.ms = -1;
-    }
-
-	//Time to check button debounce
+	//Time to check button debouncing
     if(isTime(Schedule.debounce))
     {
 		//Attend to in checkFlags()
@@ -753,26 +818,40 @@ void checkFlags()
 	//Debounce wait has finished
     if(flag.debounce)
     {
-        if((P1IN & 0x08) != 0x08)   //Button still pressed after debounce
+        if((P1IN & 0x08) != 0x08)   //If button still pressed after debounce
         {
 			///Attend to in stateControl()
 			buttonPressed = 1;
         }
+
+        //XXX Remove?
         Schedule.debounce.sec = 0;
         Schedule.debounce.ms = -1;
+
         flag.debounce = 0;
+    }
+
+    //On button press start debounce
+    if (flag.button)
+    {
+        if(Schedule.debounce.sec == 0 && Schedule.debounce.ms == -1)    //If debounce not currently occurring
+        {
+            timeIncrement(&Schedule.debounce, 0, 20);                   //20 ms debounce
+        }
+        flag.button = 0;
     }
 
 	//Left wall ultrasonic has reading ready
     if (flag.ultraLeftRead)
     {
-		//Update array of wall readings
+		//Insert new wall reading into array
         for(i = WALL_READINGS-1; i > 0; i--)
         {
             wallDistancesLeft[i] = wallDistancesLeft[i - 1];
         }
         wallDistancesLeft[0] = ultraLeft.distance;
 		
+        //In certain states this is undesirable
         if ((state != READY) && (state != WALL_REALIGN))
         {
             //Check whether a single reading is an outlier & if so ignore it
@@ -786,15 +865,15 @@ void checkFlags()
 		///Attend to in stateControl()
 		ultraReadLeft = 1;
 		
+		//Ultrasonic was read successfully so disable the set backup reading
 		Schedule.ultraLeftStartBackup.ms = -1;
 
         flag.ultraLeftRead = 0;
     }
 
-	//Right wall ultrasonic has reading ready
+	//Right wall ultrasonic read (see above)
     if (flag.ultraRightRead)
     {
-		//Update array of wall readings
         for(i = WALL_READINGS-1; i > 0; i--)
         {
             wallDistancesRight[i] = wallDistancesRight[i - 1];
@@ -803,26 +882,23 @@ void checkFlags()
 		
         if ((state != READY) && (state != WALL_REALIGN))
         {
-			//Check whether a single reading is an outlier & if so ignore it
 			if (((wallDistancesRight[1] >= wallDistancesRight[2]+2000) || (wallDistancesRight[1] <= wallDistancesRight[2]-2000))
 				&& ((wallDistancesRight[1] >= wallDistancesRight[0]+2000) || (wallDistancesRight[1] <= wallDistancesRight[0]-2000)))
 			{
 				wallDistancesRight[1] = (wallDistancesRight[0]+wallDistancesRight[2]) >> 1;
 			}
 		}
-		
-		///Attend to in stateControl()
+
 		ultraReadRight = 1;
-		
+
 		Schedule.ultraRightStartBackup.ms = -1;
 
         flag.ultraRightRead = 0;
     }
 	
-	//Wall ultrasonic has reading ready
+    //SONAR ultrasonic read (see above)
     if (flag.ultraSONARRead)
     {
-        //Update array of wall readings
         for(i = SONAR_READINGS-1; i > 0; i--)
         {
             SONARDistances[i] = SONARDistances[i - 1];
@@ -831,7 +907,6 @@ void checkFlags()
 
         if ((state != SONAR_SCAN) && (state != CAN_APPROACH) && (state != WALL_REALIGN))
         {
-            //Check whether a single reading is an outlier & if so ignore it
             if (((SONARDistances[1] >= SONARDistances[2]+2000) || (SONARDistances[1] <= SONARDistances[2]-2000))
                 && ((SONARDistances[1] >= SONARDistances[0]+2000) || (SONARDistances[1] <= SONARDistances[0]-2000)))
             {
@@ -839,22 +914,11 @@ void checkFlags()
             }
         }
 
-		///Attend to in stateControl()
 		ultraSONARRead = 1;
 		
 		Schedule.ultraSONARStartBackup.ms = -1;
 
         flag.ultraSONARRead = 0;
-    }
-
-	//On button press start debounce
-    if (flag.button)
-    {
-        if(Schedule.debounce.sec == 0 && Schedule.debounce.ms == -1)   	//If debounce not currently occurring
-        {
-            timeIncrement(&Schedule.debounce, 0, 20);  					//20 ms debounce
-        }
-        flag.button = 0;
     }
 	
 	//Drive motor needs to change behaviour
@@ -866,14 +930,14 @@ void checkFlags()
     }
 
 	//Steering motor needs to change behaviour
-    if (flag.motorSteer)    //If steering motor needs to change
+    if (flag.motorSteer)
     {
 		//Alter behaviour as has been updated
         motorOutput(&motorSteer);
         flag.motorSteer = 0;
     }
 
-	//Change state
+	//Change car state
     if (flag.stateChange)
     {
         flag.stateChange = 0;
@@ -885,7 +949,7 @@ void checkFlags()
 void stateControl()
 {
 //CALIBRATE WHERE CLOSEST WALL WILL BE========================================================
-    if (state == CLOSEST_WALL)
+    if (state == CAN_CALIBRATION)
     {
 		readSwitch(&sideSelect);
 		if (sideSelect.val == 0)
@@ -925,7 +989,7 @@ void stateControl()
             {
                 findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
                 //Use cardboard to calibrate sensors to recognise where closest wall will be
-                 closestWallLeft = avgReading-300;
+                 furthestCanLeft = avgReading-100;
             }
 			timeIncrement(&(Schedule.ultraRightStart), 0, 20);
             ultraReadLeft = 0;
@@ -943,7 +1007,7 @@ void stateControl()
             {
                 findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
                 //Use cardboard to calibrate sensors to recognise where closest wall will be
-                 closestWallRight = avgReading-300;
+                 furthestCanRight = avgReading-100;
             }
             ultraReadRight = 0;
         }
@@ -1001,7 +1065,7 @@ void stateControl()
                 findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
 
 				//Can detection threshold
-                if (avgReading < closestWallLeft-500)
+                if (avgReading < furthestCanLeft-100)
                 {
 					//If searching then go to can
                     if(search)
@@ -1014,7 +1078,10 @@ void stateControl()
                     }
                     else	//If not, then start searching soon
                     {
-                        timeIncrement(&Schedule.searchStart, 0, 300);
+                        if (firstCanFound == 1)  //Only after dealing with first can
+                        {
+                            timeIncrement(&Schedule.searchStart, 0, 300);
+                        }
                     }
                 }
 
@@ -1039,7 +1106,7 @@ void stateControl()
 
                 findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
 
-                if (avgReading < closestWallRight-500)
+                if (avgReading < furthestCanRight-100)
                 {
                     if(search)
                     {
@@ -1051,7 +1118,10 @@ void stateControl()
                     }
                     else
                     {
-                        timeIncrement(&Schedule.searchStart, 0, 300);
+                        if (firstCanFound == 1)  //Only after dealing with first can
+                        {
+                            timeIncrement(&Schedule.searchStart, 0, 300);
+                        }
                     }
                 }
 
@@ -1120,7 +1190,7 @@ void stateControl()
 			{
 				findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
 
-				if (avgReading < closestWallRight-500)
+				if (avgReading < furthestCanRight-100)
 				{
 					Schedule.movementChange.ms = -1;
 					
@@ -1154,7 +1224,7 @@ void stateControl()
 			{
 				findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
 
-				if (avgReading < closestWallLeft-500)
+				if (avgReading < furthestCanLeft-100)
 				{
 					Schedule.movementChange.ms = -1;
 					
@@ -1222,6 +1292,27 @@ void stateControl()
 //DRIVE TO CAN WHEN IN SONAR RANGE=======================================================
     if (state == CAN_APPROACH)
     {
+        if (movement == 0)
+        {
+            if ((Schedule.movementChange.ms == -1) && (expectedCanDistance > 12000))
+            {
+                if (TA1CCR2 < 1500)
+                {
+                    updateCarHeading(FORWARD, RIGHT, 50);
+                }
+                else if (TA1CCR2 > 1500)
+                {
+                    updateCarHeading(FORWARD, LEFT, 50);
+                }
+                else
+                {
+                    updateCarHeading(FORWARD, STRAIGHT, 50);
+                }
+                timeIncrement(&Schedule.movementChange, 0, 300);
+                timeIncrement(&Schedule.ultraSONARStart, 0, 400);
+
+            }
+        }
 		//Track can with SONAR
 		if (ultraSONARRead)
 		{
@@ -1275,33 +1366,34 @@ void stateControl()
     {
         if (movement == 0)
         {
-            updateCarHeading(BACK, STRAIGHT, 45);
-
             if (Schedule.movementChange.ms == -1)
             {
-                timeIncrement(&Schedule.movementChange, 0, 600);
+                updateCarHeading(BACK, STRAIGHT, 50);
+                timeIncrement(&Schedule.movementChange, 0, 400);
             }
         }
         else if (movement == 1)
         {
-            updateCarHeading(BACK, canPosition, 45);
             if (Schedule.movementChange.ms == -1)
             {
-                timeIncrement(&Schedule.movementChange, 0, 700);
+                updateCarHeading(BACK, canPosition, 50);
+                timeIncrement(&Schedule.movementChange, 1, 200);
             }
         }
         else if (movement == 2)
         {
             movement = 4;
         }
-		else if (movement ==3)
+		else if (movement == 3)
 		{
 			//Let ultrasonics work
 		}
         else if (movement == 4)
         {
+            fillBufferCount = 0;
+            straightTime = 0;
             movement = 3;
-	        updateCarHeading(FORWARD, STRAIGHT, 45);
+	        updateCarHeading(FORWARD, STRAIGHT, 55);
 	        turnState = STRAIGHT;
 
 	        if (startSide == LEFT)
@@ -1313,29 +1405,31 @@ void stateControl()
 				timeIncrement(&Schedule.ultraRightStart, 0, 20);
 			}
         }
+        else
+        {
+            movement = 4;
+        }
 
         //After dealing with a can and car has guessed wall alignment get straight again
         if (ultraReadLeft)
         {
-            indicatorLEDOff(&LEDBlue);
-            indicatorLEDOn(&LEDRed);
             if (fillBufferCount < WALL_READINGS)
             {
                 fillBufferCount++;
-                timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
+                timeIncrement(&(Schedule.ultraLeftStart), 0, 40);
             }
             else
             {
                 if (straightTime > 20)  //Occurs when not aligning to this side and just getting new reading
                 {
                     findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
-                    if (avgReading > 1000)
+                    if (avgReading > 11000)
                     {
-                        closestWallLeft = 1000;
+                        furthestCanLeft = 10000;
                     }
                     else
                     {
-                        closestWallLeft = avgReading-200;
+                        furthestCanLeft = avgReading-1000;
                     }
 
                     nextState = SEARCH;
@@ -1348,7 +1442,7 @@ void stateControl()
                     else
                     {
                         //Search start again once past white can so set large where change in search due to seeing white can again
-                        timeIncrement(&Schedule.searchStart, 10, 0);
+                        timeIncrement(&Schedule.searchStart, 6, 0);
                     }
                 }
                 else
@@ -1359,27 +1453,28 @@ void stateControl()
                         straightTime++;
                         if (straightTime > 20)  //Find wall on right next before searching
                         {
+                            indicatorLEDOn(&LEDRed);
                             fillBufferCount = 0;
                             findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
-                            if (avgReading > 1000)
+                            if (avgReading > 12000)
                             {
-                                closestWallLeft = 1000;
+                                furthestCanLeft = 12000;
                             }
                             else
                             {
-                                closestWallLeft = avgReading-200;
+                                furthestCanLeft = avgReading-2000;
                             }
                             timeIncrement(&(Schedule.ultraRightStart), 0, 20);
                         }
                         else
                         {
-                            timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
+                            timeIncrement(&(Schedule.ultraLeftStart), 0, 40);
                         }
                     }
                     else
                     {
                         straightTime = 0;
-                        timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
+                        //timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
                     }
                 }
             }
@@ -1389,29 +1484,27 @@ void stateControl()
         //After dealing with a can and car has guessed wall alignment get straight again
         if (ultraReadRight)
         {
-            indicatorLEDOn(&LEDBlue);
-            indicatorLEDOff(&LEDRed);
             if (fillBufferCount < WALL_READINGS)
             {
                 fillBufferCount++;
-                timeIncrement(&(Schedule.ultraRightStart), 0, 20);
+                timeIncrement(&(Schedule.ultraRightStart), 0, 40);
             }
             else
             {
-                if (straightTime > 10)  //Occurs when not aligning to this side and just getting new reading
+                if (straightTime > 20)  //Occurs when not aligning to this side and just getting new reading
                 {
                     findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
-                    if (avgReading > 1000)
+                    if (avgReading > 12000)
                     {
-                        closestWallRight = 1000;
+                        furthestCanRight = 10000;
                     }
                     else
                     {
-                        closestWallRight = avgReading-200;
+                        furthestCanRight = avgReading-2000;
                     }
-                    movement++;
 
                     nextState = SEARCH;
+                    indicatorLEDOn(&LEDBlue);
                     flag.stateChange = 1;
                     if (IR.colour == 1) //Can was black
                     {
@@ -1421,7 +1514,7 @@ void stateControl()
                     else
                     {
                         //Search start again once past white can so set large where change in search due to seeing white can again
-                        timeIncrement(&Schedule.searchStart, 10, 0);
+                        timeIncrement(&Schedule.searchStart, 6, 0);
                     }
                 }
                 else
@@ -1434,25 +1527,25 @@ void stateControl()
                         {
                             fillBufferCount = 0;
                             findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
-                            if (avgReading > 1000)
+                            if (avgReading > 12000)
                             {
-                                closestWallRight = 1000;
+                                furthestCanRight = 10000;
                             }
                             else
                             {
-                                closestWallRight = avgReading-200;
+                                furthestCanRight = avgReading-2000;
                             }
                             timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
                         }
                         else
                         {
-                            timeIncrement(&(Schedule.ultraRightStart), 0, 20);
+                            timeIncrement(&(Schedule.ultraRightStart), 0, 40);
                         }
                     }
                     else
                     {
                         straightTime = 0;
-                        timeIncrement(&(Schedule.ultraRightStart), 0, 20);
+                        //timeIncrement(&(Schedule.ultraRightStart), 0, 20);
                     }
                 }
             }
@@ -1469,69 +1562,209 @@ void stateControl()
 
 }
 
-
-void timeIncrement(struct Time *time, int sec, int ms)
+//Events to occur when changing to each state
+void    changingState()
 {
-    //Always on next increment amount
-    ms += TIMER_INC_MS;
-    ms -= ms % TIMER_INC_MS;
+    //Become next state
+    previousState = state;
+    state = nextState;
 
-	//Add to current time and if more then max ms add to seconds
-    time->ms = currentTime.ms + ms;
-    while(time->ms >= SECOND_COUNT)
+    if (state == READY)
     {
-        time->ms -= SECOND_COUNT;
-        sec++;
+        //Count for wall buffer
+        fillBufferCount = 0;
     }
 
-	//Add to current time and if more then max wrap back to 0
-    time->sec = currentTime.sec + sec;
-    while(time->sec >= 300)
+    if (state == SEARCH)
     {
-        time->sec -= 300;
-    }
-}
+        //Don't search and only follow wall for an amount of time
+        search = 0;
+        movement = 1;
+        turnState = STRAIGHT;
+        indicatorLEDOff(&LEDRed);
+        indicatorLEDOff(&LEDBlue);
+        searchSpeeds = SPRINT_SPEED;
+        canPosition = STRAIGHT;
 
-void setupTimerSchedule()
-{
-    if(CLOCK_USED_SCHEDULER == SMCK_FREQ)
-    {
-        TA0CTL |= TASSEL_2 + MC_1;              //SMCK  so f = 1 MHz, operating in up mode to TA0CCR0
-    }
-    else
-    {
-        TA0CTL |= TASSEL_1 + MC_1;              //ACLK  so f = 32768 Hz, operating in up mode to TA0CCR0
-    }
-    TA0CCTL0 |= 0x10;                       			//Interrupt occurs when TA0R reaches TA0CCR0
-    TA0CCR0 = CLOCK_USED_SCHEDULER*TIMER_INC_MS/1000; 	//Set the count to schedule time, e.g 1 MHz*5ms = 5000
-    TA0CCTL0 &= ~CCIFG;                     			//Clear interrupt flags
-	
-	TA0CTL &= ~TAIFG;	//Clear interrupt
-    TA0CTL &= ~TAIE;	//Disable interrupt on timer edge
-}
+        //Centre SONAR
+        servoCenter();
 
-void setupTimerSONAR()
-{
-    if(CLOCK_USED_ULTRASONIC == SMCK_FREQ)
-    {
-        TA1CTL |= TASSEL_2;			// f = 1 MHz
-    }
-    else
-    {
-        TA1CTL |= TASSEL_1;			// f = 32.768 kHz
+        //Initiate first ultrasonic reading
+        timeIncrement(&Schedule.ultraLeftStart, 0, 20);
     }
 
-    TA1CTL &= ~TAIFG;	//Clear interrupt
-    TA1CTL &= ~TAIE;	//Disable interrupt on timer edge
+    if (state == CAN_ALIGN)
+    {
+        movement = 0;
+        updateCarHeading(OFF, STRAIGHT, 45);
+        fillBufferCount = 0;
+        switch (canPosition)
+        {
+            case STRAIGHT:
+                indicatorLEDOn(&LEDBlue);
+                indicatorLEDOn(&LEDRed);
+                timeIncrement(&Schedule.ultraSONARStart, 2, 0);
+                break;
+            case RIGHT:
+                indicatorLEDOff(&LEDRed);
+                indicatorLEDOn(&LEDBlue);
+                timeIncrement(&Schedule.ultraRightStart , 2, 0);
+                break;
+            case LEFT:
+                indicatorLEDOff(&LEDBlue);
+                indicatorLEDOn(&LEDRed);
+                timeIncrement(&Schedule.ultraLeftStart , 2, 0);
+                break;
+        }
 
-    TA1CCTL0 &= ~(CCIFG+CCIE);
-    TA1CCTL2 &= ~CCIE;
-    TA1CCTL2 &= ~CCIFG;
-	
-    TA1CCTL0 |= CCIE;   //Enable interrupt to know when wraps
+        timeIncrement(&Schedule.movementChange, 3, 0);
+    }
 
-	//Count to TA1CCR0 (Defined in servo setup)
-    TA1CTL |= MC_1;
+    if (state == SONAR_SCAN)
+    {
+        indicatorLEDOff(&LEDBlue);
+        indicatorLEDOff(&LEDRed);
+
+        //Clear variables used in state
+        readingsOnAngle = 0;
+        anglesChecked = 0;
+        newAngle = 0;
+        anomalyNumber = 0;
+        canAnomaly = 0;
+        movement = 0;
+
+        for (i=0; i<NUMBER_OF_ANGLES_CHECKED; i++)
+        {
+            anomalyStart[i] = 0;
+            anomalyEnd[i] = 0;
+            anomalyPositions[i] = 0;
+            SONARAtEachAngle[i] = 0;
+        }
+
+        //Prepare servo to turn anti-clockwise
+        servoSONAR.direction = 1;
+
+        //Stop driving
+        updateCarHeading(OFF, STRAIGHT, motorDrive.pwm.aMs);
+
+        //Rotate servo full clockwise
+        TA1CCR2 = PWM_SERVO_LOWER;
+
+        //Start first reading in a second when servo has turned
+        timeIncrement(&Schedule.ultraSONARStart, 1, 0);
+    }
+
+    if (state == CAN_APPROACH)
+    {
+        movement = 0;
+
+        indicatorLEDOff(&LEDBlue);
+        indicatorLEDOff(&LEDRed);
+
+        if (TA1CCR2 < 1500) //CAN TO THE RIGHT
+        {
+            updateCarHeading(FORWARD, RIGHT, 40);
+        }
+        else if (TA1CCR2 > 1500) //CAN TO THE LEFT
+        {
+            updateCarHeading(FORWARD, LEFT, 40);
+        }
+        else
+        {
+            updateCarHeading(FORWARD, STRAIGHT, 40);
+        }
+
+        lostCan = 0;
+        lostCount = 0;
+
+        timeIncrement(&Schedule.ultraSONARStart, 0, 20);
+    }
+
+    if (state == COLOUR_DETECT)
+    {
+        movement = 0;
+
+        //Register first can has been found and dealt with
+        firstCanFound = 1;
+
+        updateCarHeading(OFF, STRAIGHT, 40);
+
+        // Check IR sensor - get colour
+        IRRead(&IR);
+
+        // Decide HIT or AVOID depending on BLACK or WHITE can
+        if (IR.colour)
+        {
+            // Hit can if BLACK
+            nextState = REVERSE_CAN;
+            flag.stateChange = 1;
+            Schedule.stateChange.sec = 0;
+            Schedule.stateChange.ms = -1;
+            indicatorLEDOn(&LEDRed);
+        }
+        else
+        {
+            indicatorLEDOn(&LEDBlue);
+            // Avoid can if WHITE
+            if (canPosition  == STRAIGHT)
+            {
+                nextState = CIRCUMNAVIGATE;
+            }
+            else
+            {
+                nextState = WALL_REALIGN;
+            }
+            flag.stateChange = 1;
+            Schedule.stateChange.sec = 0;
+            Schedule.stateChange.ms = -1;
+            indicatorLEDOff(&LEDRed);
+        }
+    }
+
+    if (state == REVERSE_CAN)
+    {
+        movement = 0;
+
+        updateCarHeading(BACK, STRAIGHT, SPEED_BACK);
+
+        nextState = CAN_HIT;
+        timeIncrement(&Schedule.stateChange, 0, REVERSE_TIME);
+    }
+
+    if (state == CAN_HIT)
+    {
+        movement = 0;
+
+        updateCarHeading(FORWARD, STRAIGHT, 100);
+
+        nextState = WALL_REALIGN;
+        timeIncrement(&Schedule.stateChange, 0, HIT_TIME);
+    }
+
+    if (state == CIRCUMNAVIGATE)
+    {
+        movement = 0;
+    }
+
+    if (state == WALL_REALIGN)
+    {
+        indicatorLEDOn(&LEDRed);
+        indicatorLEDOn(&LEDBlue);
+
+        movement = 0;
+        Schedule.movementChange.ms = -1;
+
+        fillBufferCount = 0;
+        straightTime = 0;
+    }
+
+    if (state == STOP)
+    {
+        indicatorLEDOff(&LEDRed);
+
+        //Stop all motors and readings
+        updateCarHeading(OFF, STRAIGHT, 40);
+    }
 }
 
 void alignToWall()
@@ -1952,207 +2185,6 @@ void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int
 			break;
 		}
 		avgReading = avgNewReading;
-	}
-}
-
-//Events to occur when changing to each state
-void    changingState()
-{
-	//Become next state
-	previousState = state;
-	state = nextState;
-	
-	if (state == READY)
-	{
-		//Count for wall buffer
-		fillBufferCount = 0;
-	}
-
-	if (state == SEARCH)
-	{
-		//Don't search and only follow wall for an amount of time
-		search = 0;
-		movement = 1;
-		turnState = STRAIGHT;
-		indicatorLEDOff(&LEDRed);
-		indicatorLEDOff(&LEDBlue);
-		searchSpeeds = SPRINT_SPEED;
-		canPosition = STRAIGHT;
-
-		//Centre SONAR
-		servoCenter();
-
-		//Initiate first ultrasonic reading
-		timeIncrement(&Schedule.ultraLeftStart, 0, 20);
-	}
-
-	if (state == CAN_ALIGN)
-	{
-		movement = 0;
-	    updateCarHeading(OFF, STRAIGHT, 45);
-		fillBufferCount = 0;
-        switch (canPosition)
-        {
-            case STRAIGHT:
-                indicatorLEDOn(&LEDBlue);
-                indicatorLEDOn(&LEDRed);
-                timeIncrement(&Schedule.ultraSONARStart, 2, 0);
-                break;
-            case RIGHT:
-                indicatorLEDOff(&LEDRed);
-                indicatorLEDOn(&LEDBlue);
-                timeIncrement(&Schedule.ultraRightStart , 2, 0);
-                break;
-            case LEFT:
-                indicatorLEDOff(&LEDBlue);
-                indicatorLEDOn(&LEDRed);
-                timeIncrement(&Schedule.ultraLeftStart , 2, 0);
-                break;
-        }
-		
-		timeIncrement(&Schedule.movementChange, 3, 0);
-	}
-	
-	if (state == SONAR_SCAN)
-	{
-	    indicatorLEDOff(&LEDBlue);
-        indicatorLEDOff(&LEDRed);
-
-		//Clear variables used in state
-		readingsOnAngle = 0;
-		anglesChecked = 0;
-		newAngle = 0;
-		anomalyNumber = 0;
-		canAnomaly = 0;
-		movement = 0;
-		
-		for (i=0; i<NUMBER_OF_ANGLES_CHECKED; i++)
-		{
-			anomalyStart[i] = 0;
-			anomalyEnd[i] = 0;
-			anomalyPositions[i] = 0;
-			SONARAtEachAngle[i] = 0;
-		}
-		
-		//Prepare servo to turn anti-clockwise
-		servoSONAR.direction = 1;
-		
-		//Stop driving
-		updateCarHeading(OFF, STRAIGHT, motorDrive.pwm.aMs);
-		
-		//Rotate servo full clockwise
-		TA1CCR2 = PWM_SERVO_LOWER;
-		
-		//Start first reading in a second when servo has turned
-		timeIncrement(&Schedule.ultraSONARStart, 1, 0);
-	}
-	
-	if (state == CAN_APPROACH)
-	{
-	    movement = 0;
-
-	    indicatorLEDOff(&LEDBlue);
-	    indicatorLEDOff(&LEDRed);
-
-		if (TA1CCR2 < 1500) //CAN TO THE RIGHT
-		{
-			updateCarHeading(FORWARD, RIGHT, 40);
-		}
-		else if (TA1CCR2 > 1500) //CAN TO THE LEFT
-		{
-			updateCarHeading(FORWARD, LEFT, 40);
-		}
-		else
-		{
-			updateCarHeading(FORWARD, STRAIGHT, 40);
-		}
-		
-		lostCan = 0;
-		lostCount = 0;
-		
-		timeIncrement(&Schedule.ultraSONARStart, 0, 20);
-	}
-	
-	if (state == COLOUR_DETECT)
-	{
-	    movement = 0;
-
-		updateCarHeading(OFF, STRAIGHT, 40);
-
-		// Check IR sensor - get colour
-		IRRead(&IR);
-
-		// Decide HIT or AVOID depending on BLACK or WHITE can
-		if (IR.colour)
-		{
-			// Hit can if BLACK
-			nextState = REVERSE_CAN;
-			flag.stateChange = 1;
-			Schedule.stateChange.sec = 0;
-			Schedule.stateChange.ms = -1;
-			indicatorLEDOn(&LEDRed);
-		}
-		else
-		{
-		    indicatorLEDOn(&LEDBlue);
-			// Avoid can if WHITE
-		    if (canPosition  == STRAIGHT)
-		    {
-		        nextState = CIRCUMNAVIGATE;
-		    }
-		    else
-		    {
-		        nextState = WALL_REALIGN;
-		    }
-			flag.stateChange = 1;
-			Schedule.stateChange.sec = 0;
-			Schedule.stateChange.ms = -1;
-			indicatorLEDOff(&LEDRed);
-		}
-	}
-	
-	if (state == REVERSE_CAN)
-	{
-	    movement = 0;
-
-		updateCarHeading(BACK, STRAIGHT, SPEED_BACK);
-		
-		nextState = CAN_HIT;
-		timeIncrement(&Schedule.stateChange, 0, REVERSE_TIME);
-	}
-	
-	if (state == CAN_HIT)
-	{
-	    movement = 0;
-
-		updateCarHeading(FORWARD, STRAIGHT, 100);
-		
-		nextState = WALL_REALIGN;
-		timeIncrement(&Schedule.stateChange, 0, HIT_TIME);
-	}
-	
-	if (state == CIRCUMNAVIGATE)
-	{
-	    movement = 0;
-	}
-	
-	if (state == WALL_REALIGN)
-	{
-	    indicatorLEDOn(&LEDRed);
-	    indicatorLEDOn(&LEDBlue);
-	    movement = 0;
-		Schedule.movementChange.ms = -1;
-		
-		fillBufferCount = 0;
-		straightTime = 0;
-	}
-	
-	if (state == STOP)
-	{
-		indicatorLEDOff(&LEDRed);
-
-		//Stop all motors and readings
-		updateCarHeading(OFF, STRAIGHT, 40);
 	}
 }
 
