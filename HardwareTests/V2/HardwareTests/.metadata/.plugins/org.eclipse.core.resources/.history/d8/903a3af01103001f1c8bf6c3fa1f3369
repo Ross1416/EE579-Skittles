@@ -1,0 +1,12 @@
+#ifndef COMMON_H
+#define COMMON_H
+
+// Local libraries
+#include "IndicatorLED.h"
+
+// Indicator LED
+extern struct IndicateLED indicatorLED;
+
+void indicatorLEDTest(int port, int pin);
+
+#endif // COMMON_H

@@ -1,0 +1,67 @@
+/*
+Filename    : HardwareTest/HardwareComponentTests.c
+Author      : Andrew Law
+Project     : EE579 Skittles Knocking Over Project
+Date        : 11/4/24
+Description : Script to test all sensor components
+
+            Comment out all functions that arent to be tested.
+            One function is used for testing each component.
+            Select a word into the function to determine which
+            component is to be tested.
+--------------------------------------------------------------------------------
+Functions Present
+--------------------------------------------------------------------------------
+selectComponent()
+--------------------------------------------------------------------------------
+Change History
+--------------------------------------------------------------------------------
+22-APR-2024 andrewlaw9178 created to have hardware component test in 1 location
+--------------------------------------------------------------------------------
+*/
+
+// Local libraries
+#include "Common.c"
+
+// Define Hardware ports
+IND_LED_PORT = 2;                       // Located at P2.5
+IND_LED_PIN = BIT5;                     // Located at P2.5
+
+void selectComponent(char component)
+{
+    switch(component)
+    {
+        case '1':
+            // Indicator LED test has been selected
+            indicatorLEDTest(IND_LED_PORT, IND_LED_PIN);
+            break;
+        //case '2':
+        //    // Start button test has been selected
+        //    startButtonTest();
+        //    break;
+        default:
+            // Handle invalid option
+            break;
+    }
+}
+
+int main(void)
+{
+    //Stop watchdog timer
+    WDTCTL = WDTPW | WDTHOLD;
+
+    while(1)
+    {
+        // Enter 1 for indicator LED test
+        // Enter 2 for start button test
+        // Enter 3 for steer test
+        // Enter 4 for drive test
+        // Enter 5 for servo test
+        // Enter 6 for SONAR ultrasonic test
+        // Enter 7 for LEFT ultrasonic test
+        // Enter 8 for RIGHT ultrasonic test
+        // Enter 9 for Infrared test
+
+        selectComponent('1');
+    }
+}
