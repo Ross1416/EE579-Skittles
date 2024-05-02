@@ -765,8 +765,8 @@ extern void sonarTest(int trig, int echoPin, int echoPort)
     Schedule.ultraSONARStart.sec = 0;
     Schedule.ultraSONARStart.ms = -1;
 
-    // Start getting first measurement after 0.12 seconds
-    timeIncrement(&(Schedule.ultraSONARStart), 0, 120);
+    // Start getting first measurement after 1seconds
+    timeIncrement(&(Schedule.ultraSONARStart), 1, 0);
 
     // Disable flag
     flag.ultraSONARRead = 0;
@@ -813,8 +813,8 @@ extern void leftTest(int trig, int echoPin, int echoPort)
     Schedule.ultraLeftStart.sec = 0;
     Schedule.ultraLeftStart.ms = -1;
 
-    // Start getting first measurement after 0.12 seconds
-    timeIncrement(&(Schedule.ultraLeftStart), 0, 120);
+    // Start getting first measurement after 1 seconds
+    timeIncrement(&(Schedule.ultraLeftStart), 1, 0);
 
     // Disable flag
     flag.ultraLeftWallRead = 0;
@@ -861,8 +861,8 @@ extern void rightTest(int trig, int echoPin, int echoPort)
     Schedule.ultraRightStart.sec = 0;
     Schedule.ultraRightStart.ms = -1;
 
-    // Start getting first measurement after 0.12 seconds
-    timeIncrement(&(Schedule.ultraRightStart), 0, 120);
+    // Start getting first measurement after 1 seconds
+    timeIncrement(&(Schedule.ultraRightStart), 1, 0);
 
     // Disable flag
     flag.ultraRightWallRead = 0;
