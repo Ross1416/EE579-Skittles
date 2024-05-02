@@ -38,14 +38,18 @@ Change History
 #include "Common.h"
 
 // Define Hardware ports -- all are currently located at positions for current set up
-#define IND_LED_PORT            2               // Located at Port 2
-#define IND_LED_PIN             BIT5            // Located at P2.5
+#define RED_LED_PORT            2               // Located at Port 2
+#define RED_LED_PIN             BIT5            // Located at P2.5
+#define BLUE_LED_PORT           2               // Located at Port 2
+#define BLUE_LED_PIN            BIT6            // Located at P2.6
 #define START_BUTTON_PORT       1               // Located at Port 1
 #define START_BUTTON_PIN        BIT3            // Located at P1.3
-#define MOTOR_DRIVE_ANODE       BIT5            // Located at P1.4
-#define MOTOR_DRIVE_CATHODE     BIT4            // Located at P1.5
-#define MOTOR_STEER_ANODE       BIT6            // Located at P1.6
-#define MOTOR_STEER_CATHODE     BIT7            // Located at P1.7
+#define SIDE_SELECT_SWITCH_PORT 1               // Located at Port 1
+#define SIDE_SELECT_SWITCH_PIN  BIT1            // Located at P1.1
+#define MOTOR_DRIVE_ANODE       BIT6            // Located at P1.6
+#define MOTOR_DRIVE_CATHODE     BIT7            // Located at P1.7
+#define MOTOR_STEER_ANODE       BIT4            // Located at P1.4
+#define MOTOR_STEER_CATHODE     BIT5            // Located at P1.5
 #define SERVO_PORT              2               // Located at Port 2
 #define SERVO_PIN               BIT4            // Located at P2.4
 #define ULTRA_SONAR_TRIG        BIT0            // Located at P2.0
@@ -59,8 +63,6 @@ Change History
 #define ULTRA_RIGHT_PORT        2               // Located at Port 2
 #define IR_PORT                 2               // Located at Port 2
 #define IR_PIN                  BIT3            // Located at P2.3
-#define SIDE_SELECT_SWITCH_PORT 1               // Located at Port 1
-#define SIDE_SELECT_SWITCH_PIN  BIT1            // Located at P1.1
 
 int main(void)
 {
@@ -80,7 +82,7 @@ int main(void)
         // Enter 9 for RIGHT ultrasonic test
         // Enter 10 for Infrared test
 
-        selectComponent(9);
+        selectComponent(4);
     }
 }
 
@@ -90,22 +92,22 @@ void selectComponent(int component)
     {
         case 1:
             // Indicator LED test has been selected
-            indicatorLEDTest(IND_LED_PORT, IND_LED_PIN);
+            indicatorLEDsTest(RED_LED_PORT, RED_LED_PIN, BLUE_LED_PORT, BLUE_LED_PIN);
             break;
         case 2:
             // Start button test has been selected
-            initLEDPHY(IND_LED_PORT, IND_LED_PIN);
+            initLEDsPHY(RED_LED_PORT, RED_LED_PIN, BLUE_LED_PORT, BLUE_LED_PIN);
             startButtonTest(START_BUTTON_PORT, START_BUTTON_PIN);
             break;
         case 3:
             // Slide switch test has been selected
-            initLEDPHY(IND_LED_PORT, IND_LED_PIN);
+            initLEDsPHY(RED_LED_PORT, RED_LED_PIN, BLUE_LED_PORT, BLUE_LED_PIN);
             initStartButtonPHY(START_BUTTON_PORT, START_BUTTON_PIN);
             sideSelectSwitchTest(SIDE_SELECT_SWITCH_PORT, SIDE_SELECT_SWITCH_PIN);
             break;
         case 4:
             // Drive test has been selected
-            initLEDPHY(IND_LED_PORT, IND_LED_PIN);
+            initLEDsPHY(RED_LED_PORT, RED_LED_PIN, BLUE_LED_PORT, BLUE_LED_PIN);
             driveTest(MOTOR_DRIVE_ANODE, MOTOR_DRIVE_CATHODE);
             break;
         case 5:
@@ -118,22 +120,22 @@ void selectComponent(int component)
             break;
         case 7:
             // SONAR ultrasonic test has been selected
-            initLEDPHY(IND_LED_PORT, IND_LED_PIN);
+            initLEDsPHY(RED_LED_PORT, RED_LED_PIN, BLUE_LED_PORT, BLUE_LED_PIN);
             sonarTest(ULTRA_SONAR_TRIG, ULTRA_SONAR_ECHO, ULTRA_SONAR_PORT);
             break;
         case 8:
             // Right ultrasonic test has been selected
-            initLEDPHY(IND_LED_PORT, IND_LED_PIN);
+            initLEDsPHY(RED_LED_PORT, RED_LED_PIN, BLUE_LED_PORT, BLUE_LED_PIN);
             leftTest(ULTRA_LEFT_TRIG, ULTRA_LEFT_ECHO, ULTRA_LEFT_PORT);
             break;
         case 9:
             // Right ultrasonic test has been selected
-            initLEDPHY(IND_LED_PORT, IND_LED_PIN);
+            initLEDsPHY(RED_LED_PORT, RED_LED_PIN, BLUE_LED_PORT, BLUE_LED_PIN);
             rightTest(ULTRA_RIGHT_TRIG, ULTRA_RIGHT_ECHO, ULTRA_RIGHT_PORT);
             break;
         case 10:
             // Infrared sensor test has been selected
-            initLEDPHY(IND_LED_PORT, IND_LED_PIN);
+            initLEDsPHY(RED_LED_PORT, RED_LED_PIN, BLUE_LED_PORT, BLUE_LED_PIN);
             irTest(IR_PORT, IR_PIN);
             break;
         default:
