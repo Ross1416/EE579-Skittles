@@ -7076,3 +7076,340 @@ Finished building target: "HardwareTests.out"
  
 
 **** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../Common.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="Common.d_raw"  "../Common.c"
+"../Common.c", line 126: remark #1530-D: (ULP 5.1) Detected modulo operation(s). Recommend moving them to RAM during run time or not using as these are processing/power intensive
+"../Common.c", line 497: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 499: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 519: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 521: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 529: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 530: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 567: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 568: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 576: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 577: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 612: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 613: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 660: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 661: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 707: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 708: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 709: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 752: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 753: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 754: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 800: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 801: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 802: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 848: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 849: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 850: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 893: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 894: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+Finished building: "../Common.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../main.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="main.d_raw"  "../main.c"
+Finished building: "../main.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+gmake[1]: 'HardwareTests.out' is up to date.
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../main.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="main.d_raw"  "../main.c"
+Finished building: "../main.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../Common.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="Common.d_raw"  "../Common.c"
+"../Common.c", line 126: remark #1530-D: (ULP 5.1) Detected modulo operation(s). Recommend moving them to RAM during run time or not using as these are processing/power intensive
+"../Common.c", line 497: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 499: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 519: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 521: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 529: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 530: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 567: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 568: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 576: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 577: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 612: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 613: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 660: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 661: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 707: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 708: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 709: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 729: remark #1527-D: (ULP 2.1) Detected SW delay loop using empty loop. Recommend using a timer module instead
+"../Common.c", line 752: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 753: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 754: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 800: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 801: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 802: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 848: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 849: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 850: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 893: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 894: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+Finished building: "../Common.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../Common.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="Common.d_raw"  "../Common.c"
+"../Common.c", line 126: remark #1530-D: (ULP 5.1) Detected modulo operation(s). Recommend moving them to RAM during run time or not using as these are processing/power intensive
+"../Common.c", line 497: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 499: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 519: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 521: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 529: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 530: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 567: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 568: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 576: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 577: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 612: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 613: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 660: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 661: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 707: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 708: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 709: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 752: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 753: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 754: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 800: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 801: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 802: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 848: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 849: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 850: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 893: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+"../Common.c", line 894: remark #1546-D: (ULP 15.1) Detected consecutive bitfield assigns. Recommend using bit mask instead
+Finished building: "../Common.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../main.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="main.d_raw"  "../main.c"
+Finished building: "../main.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../main.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="main.d_raw"  "../main.c"
+Finished building: "../main.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+gmake[1]: 'HardwareTests.out' is up to date.
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../main.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="main.d_raw"  "../main.c"
+Finished building: "../main.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../main.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="main.d_raw"  "../main.c"
+Finished building: "../main.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../main.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="main.d_raw"  "../main.c"
+Finished building: "../main.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../main.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="main.d_raw"  "../main.c"
+Finished building: "../main.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****
+
+**** Build of configuration Debug for project HardwareTests ****
+
+"C:\\ti\\ccs1270\\ccs\\utils\\bin\\gmake" -k -j 8 all -O 
+ 
+Building file: "../Ultrasonic.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="Ultrasonic.d_raw"  "../Ultrasonic.c"
+Finished building: "../Ultrasonic.c"
+ 
+Building file: "../main.c"
+Invoking: MSP430 Compiler
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --include_path="C:/ti/ccs1270/ccs/ccs_base/msp430/include" --include_path="C:/Users/andre/Year4/EE579/Sem2/HardwareTests/HardwareTests/HardwareTests" --include_path="C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number --preproc_with_compile --preproc_dependency="main.d_raw"  "../main.c"
+Finished building: "../main.c"
+ 
+Building target: "HardwareTests.out"
+Invoking: MSP430 Linker
+"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/bin/cl430" -vmsp --use_hw_mpy=none --advice:power=all --define=__MSP430G2553__ -g --printf_support=minimal --diag_warning=225 --diag_wrap=off --display_error_number -z -m"HardwareTests.map" --heap_size=80 --stack_size=80 -i"C:/ti/ccs1270/ccs/ccs_base/msp430/include" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/lib" -i"C:/ti/ccs1270/ccs/tools/compiler/ti-cgt-msp430_21.6.1.LTS/include" --reread_libs --diag_wrap=off --display_error_number --warn_sections --xml_link_info="HardwareTests_linkInfo.xml" --use_hw_mpy=none --rom_model -o "HardwareTests.out" "./Common.obj" "./DCMotor.obj" "./Infrared.obj" "./Servo.obj" "./Ultrasonic.obj" "./UserInterface.obj" "./main.obj" "../lnk_msp430g2553.cmd"  -llibc.a 
+<Linking>
+remark #10372-D: (ULP 4.1) Detected uninitialized Port 3 in this project. Recommend initializing all unused ports to eliminate wasted current consumption on unused pins.
+Finished building target: "HardwareTests.out"
+ 
+
+**** Build Finished ****

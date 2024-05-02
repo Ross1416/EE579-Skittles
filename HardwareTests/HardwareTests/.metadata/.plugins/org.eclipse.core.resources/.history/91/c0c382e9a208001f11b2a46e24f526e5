@@ -9,8 +9,7 @@ Change History
 --------------------------------------------------------------------------------
 31-MAR-2024 SARK created to restructure AutonomousCar project
 15-APR-2024 andrewlaw9178 set P2.0 to always be the trigger pin
-17-APR-2024 andrewlaw9178 added comments,
-02-MAY-2024 andrewlaw9178 altered line 29-32 SONAR trig
+17-APR-2024 andrewlaw9178 added comments
 --------------------------------------------------------------------------------
 */
 

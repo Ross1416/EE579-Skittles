@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <section name="Workbench">
 	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
-		<item key="selection" value="steerTest"/>
+		<item key="selection" value="centre"/>
 		<item key="wrap" value="true"/>
 		<item key="casesensitive" value="false"/>
 		<item key="wholeword" value="false"/>
 		<item key="incremental" value="false"/>
 		<item key="isRegEx" value="false"/>
 		<list key="findhistory">
+			<item value="centre"/>
 			<item value="steerTest"/>
 			<item value="Schedule.nextMovement"/>
 			<item value=", 5"/>
@@ -22,7 +23,6 @@
 			<item value="checkFlags"/>
 			<item value="flag."/>
 			<item value="LEDTest"/>
-			<item value="LED"/>
 		</list>
 		<list key="replacehistory">
 			<item value=", 3"/>

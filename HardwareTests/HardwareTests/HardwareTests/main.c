@@ -52,7 +52,7 @@ Change History
 #define MOTOR_STEER_CATHODE     BIT5            // Located at P1.5
 #define SERVO_PORT              2               // Located at Port 2
 #define SERVO_PIN               BIT4            // Located at P2.4
-#define ULTRA_SONAR_TRIG        BIT0            // Located at P2.0
+#define ULTRA_SONAR_TRIG        BIT0            // Located at P2.0 ---- 1.0
 #define ULTRA_SONAR_ECHO        BIT2            // Located at P1.2
 #define ULTRA_SONAR_PORT        1               // Located at Port 1
 #define ULTRA_LEFT_TRIG         BIT0            // Located at P2.0
@@ -71,7 +71,7 @@ int main(void)
 
     while(1)
     {
-        // Enter 1 for indicator LED test
+        // Enter 1 for indicator LEDs test
         // Enter 2 for start button test
         // Enter 3 for slide switch
         // Enter 4 for drive test
@@ -82,7 +82,7 @@ int main(void)
         // Enter 9 for RIGHT ultrasonic test
         // Enter 10 for Infrared test
 
-        selectComponent(4);
+        selectComponent(7);
     }
 }
 
