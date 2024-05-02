@@ -27,7 +27,7 @@ Change History
             reading instead of absolute distance to wall
 22-APR-2024 SARK implemented left and right ultrasonic sensors as well as allowing
             "wall to align to" to be controllable by switch
-01-MAY-2024 Trying one last realignment fix
+01-MAY-2024 Trying one last realignment fix & commenting all of code
 --------------------------------------------------------------------------------
 */
 
@@ -188,40 +188,39 @@ void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int
 #define MOTOR_PWM_PERIOD    100                      //PWM period of motors.
 #define SPEED_FORWARD       50    //Driving forward speed
 #define SPEED_BACK          50    //Driving backward is slower so should have higher PWM to compensate
-#define READINGS_TO_SPEED_CHANGE    5               //Number of distance readings taken whilst turning before slowing down.
 
 //Wall readings control
 #define WALL_READINGS   5                   //Number of wall readings remembered (MAKE 1+2^x)
 #define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1), used to computationally effiecient find average
-#define TIME_BEFORE_SEARCHING   6           //
-#define FIND_SPEED    40
-#define SPRINT_SPEED  50
+#define TIME_BEFORE_SEARCHING   8           //
+#define FIND_SPEED    45
+#define SPRINT_SPEED  60
 
 //Time to align to can
 //#define ALIGNMENT_TIME   850
 
 //SONAR Reading control
 #define SONAR_READINGS   5					//Make equal to wall readings
-#define MAX_FRONT_DETECT 1200
-#define ANOMALY_DISTANCE 500
+#define MAX_FRONT_DETECT 2500               //Distance in front can is detected while searching
+#define ANOMALY_DISTANCE 500                //Distance drop off for start of anomaly
 
 //SONAR SCANNING
-#define NUMBER_OF_ANGLES_CHECKED    15
+#define NUMBER_OF_ANGLES_CHECKED    15      //Number of angles in SONAR sweep
 
 //CAN ALIGN
-#define CAN_ALIGN_SPEED 45
-#define INITIAL_CAN_ALIGN_SEC   0
+#define CAN_ALIGN_SPEED 45                  //Speed to readjust
+#define INITIAL_CAN_ALIGN_SEC   0           //Time to readjust from parallel
 #define INITIAL_CAN_ALIGN_MS    900
-#define SECONDARY_CAN_ALIGN_SEC 0
+#define SECONDARY_CAN_ALIGN_SEC 0           //Time to readjust after approach
 #define SECONDARY_CAN_ALIGN_MS  400
 
 //CAN APPROACH
-#define FACE_CAN_ANGLE_TOLERANCE    250
-#define FACE_CAN_DIST_TOLERANCE     500
-#define CAN_APPROACH_SPEED          40
+#define FACE_CAN_ANGLE_TOLERANCE    250     //Directly facing tolerance
+#define FACE_CAN_DIST_TOLERANCE     500     //Distance away tolerance
+#define CAN_APPROACH_SPEED          45      //Speed when approaching
 
 //REVERSE TIME FOR RUN UP TO CAN
-#define REVERSE_TIME   750
+#define REVERSE_TIME   750                  //750 ms reverse
 #define REVERSE_SPEED  45
 
 //HIT CAN
@@ -1398,7 +1397,7 @@ void stateControl()
             if (Schedule.movementChange.ms == -1)
             {
                 updateCarHeading(BACK, STRAIGHT, 50);
-                timeIncrement(&Schedule.movementChange, 0, 400);
+                timeIncrement(&Schedule.movementChange, 0, 250);
             }
         }
         else if (movement == 1) //Then reverse and turn generally back to straight
@@ -1406,13 +1405,30 @@ void stateControl()
             if (Schedule.movementChange.ms == -1)
             {
                 updateCarHeading(BACK, canPosition, 50);
-                timeIncrement(&Schedule.movementChange, 1, 200);
+                timeIncrement(&Schedule.movementChange, 1, 500);
             }
         }
         else if (movement == 2)
         {
-            movement = 4;
+            if (Schedule.movementChange.ms == -1)
+            {
+                nextState = SEARCH;
+                flag.stateChange = 1;
+                Schedule.stateChange.ms = -1;
+
+                timeIncrement(&Schedule.searchStart, 5, 0);
+
+                for (i=0; i<WALL_READINGS; i++)
+                {
+                    wallDistancesLeft[i] = 64000;
+                    wallDistancesRight[i] = 64000;
+                }
+            }
+
+            //movement = 4;
         }
+
+        /*
 		else if (movement == 3)
 		{
 			//Let ultrasonics work
@@ -1427,11 +1443,11 @@ void stateControl()
 
 	        if (startSide == LEFT)
 			{
-				timeIncrement(&Schedule.ultraLeftStart, 0, 20);
+				timeIncrement(&Schedule.ultraLeftStart, 0, 200);
 			}
 			else
 			{
-				timeIncrement(&Schedule.ultraRightStart, 0, 20);
+				timeIncrement(&Schedule.ultraRightStart, 0, 200);
 			}
         }
         else
@@ -1579,7 +1595,7 @@ void stateControl()
                 }
             }
             ultraReadRight = 0;
-        }
+        }*/
 
     }
 
@@ -1614,6 +1630,16 @@ void    changingState()
         indicatorLEDOff(&LEDBlue);
         searchSpeeds = SPRINT_SPEED;
         canPosition = STRAIGHT;
+
+        for (i=1; i<WALL_READINGS;i++)
+        {
+            if (i != 0)
+            {
+                wallDistancesRight[i] = wallDistancesRight[0];
+                wallDistancesLeft[i] = wallDistancesLeft[0];
+            }
+            SONARDistances[i] = 64000;
+        }
 
         //Centre SONAR
         servoCenter();
@@ -1827,18 +1853,18 @@ void alignToWall()
     for (j=1; j<WALL_READINGS; j++)
     {
         //If wall getting further away
-        if (*(wallDistances + j) < *(wallDistances + j - 1)-10)
+        if (*(wallDistances + j) < *(wallDistances + j - 1))
         {
             increasing++;
         }
-        else if (*(wallDistances + j) > *(wallDistances + j - 1)+10) //If wall getting closer
+        else if (*(wallDistances + j) > *(wallDistances + j - 1)) //If wall getting closer
         {
             decreasing++;
         }
 
         //If large change could be a change in wall geometry
-        if ((*(wallDistances + j) < *(wallDistances + j - 1)-1500)
-                || (*(wallDistances + j) > *(wallDistances + j - 1)+1500))
+        if ((*(wallDistances + j) < *(wallDistances + j - 1)-3000)
+                || (*(wallDistances + j) > *(wallDistances + j - 1)+3000))
         {
             largeChange++;
         }
@@ -1848,11 +1874,11 @@ void alignToWall()
     {
         turnState = STRAIGHT;
     }
-    else if (decreasing >= WALL_READINGS-2) //If results are decreasing turn away from wall
+    else if (decreasing >= WALL_READINGS-1) //If results are decreasing turn away from wall
     {
         turnState = AWAY;
     }
-    else if (increasing >= WALL_READINGS-2) //If results are increasing turn to the wall
+    else if (increasing >= WALL_READINGS-1) //If results are increasing turn to the wall
     {
         turnState = CLOSE;
     }
@@ -1879,12 +1905,6 @@ void alignToWall()
 			updateCarHeading(FORWARD, LEFT, searchSpeeds-5);
 		}
 
-		//Remove? XXX
-		for (j=1; j<WALL_READINGS; j++)
-		{
-		    *(wallDistances + j) = *(wallDistances);
-		}
-
         timeIncrement(&Schedule.movementChange, 0, 50);
         break;
     case CLOSE:
@@ -1897,12 +1917,6 @@ void alignToWall()
 		{
 			updateCarHeading(FORWARD, RIGHT, searchSpeeds-5);
 		}
-
-        //Remove? XXX
-        for (j=1; j<WALL_READINGS; j++)
-        {
-            *(wallDistances + j) = *(wallDistances);
-        }
 
         timeIncrement(&Schedule.movementChange, 0, 50);
         break;
