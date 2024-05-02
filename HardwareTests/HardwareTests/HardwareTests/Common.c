@@ -27,7 +27,9 @@ Change History
 25-APR-2024 andrewlaw9178 fixed LED and button and added drive tests
 26-APR-2024 andrewlaw9178 added steer and servo test
 29-APR-2024 andrewlaw9178 changed comments and added ultrasonic
-01-MAY-2024 andrewlaw9178 changed comments, fixed ultrasonics and added IR
+01-MAY-2024 andrewlaw9178 changed comments, fixed ultrasonics and added IR and
+            side switches
+02-MAY-2024 andrewlaw9178 edited comments and updated drive code
 --------------------------------------------------------------------------------
 */
 // External libraries
@@ -44,10 +46,9 @@ struct Time currentTime = {0, 0};                                       // Varia
 struct Scheduler Schedule= {{0, -1}};                                   // Schedule when events needing attended
 struct Flags flag = {0, 0, 0};                                          // Flag when something ready to be attended
 
-void isUltrasonicUsed(char yesNo)
-{
-    ultraUsed = yesNo;
-}
+// Used to determine which test is being executed
+unsigned char compUsed;
+
 // Sets up the Timer0 A0 to create a soft clock of 2ms period
 void setupTimerSchedule()
 {
@@ -198,24 +199,6 @@ void checkSchedule()
         }
     }
 
-    // Get car to start moving
-    if(isTime(Schedule.initiallyMoveForward))
-    {
-        // Disable schedule
-        Schedule.initiallyMoveForward.sec = 0;
-        Schedule.initiallyMoveForward.ms = -1;
-
-        // Start driving forward
-        motorDrive.direction = FORWARD;
-        flag.motorDrive = 1; // Used to change the state of the drive motor
-        motorDrive.pwm.aMs = SPEED_TOP;
-        indicatorLEDOn(&indicatorLED);                                          // Turn on indicator LED
-
-
-        // Schedule next movement
-        timeIncrement(&Schedule.nextMovement, 0, 500);
-    }
-
     // Get car to next drive movement
     if(isTime(Schedule.nextMovement))
     {
@@ -223,13 +206,13 @@ void checkSchedule()
         {
             // Stop car
             motorDrive.direction = OFF;
-            flag.motorDrive = 1;
+            flag.motorDrive = 1;                                                // Used to change the state of the drive motor
         }
         else if(movementStage == 1)
         {
             // Start driving backwards
             motorDrive.direction = BACK;
-            flag.motorDrive = 1;
+           flag.motorDrive = 1;
         }
         else if(movementStage == 2)
         {
@@ -343,13 +326,13 @@ void checkSchedule()
         }
         else if(movementStageSteer == 2)
         {
-            // Turn LEFT
+            // Turn RIGHT
             motorSteer.direction = RIGHT;
             flag.motorSteer = 1;
         }
         else if(movementStageSteer == 3)
         {
-            // Turn LEFT
+            // Turn STRAIGHT
             motorSteer.direction = STRAIGHT;
             flag.motorSteer = 1;
         }
@@ -415,9 +398,10 @@ void checkFlags()
     // Debounce wait has finished
     if(flag.debounce)
     {
-        if((P1IN & startButton.pin) != startButton.pin)                 // Button still pressed after debounce
+        readButton(&startButton);
+        if(startButton.val)                                             // If start button still pressed after debounce
         {
-            if(ultraUsed == 2)                                          // If side select switch is being tested
+            if(compUsed == '2')                                          // If side select switch is being tested
             {
                 readSwitch(&sideSelect);
                 if(sideSelect.val == 0)                                 // If side select switch is Left
@@ -434,6 +418,7 @@ void checkFlags()
                 indicatorLEDToggle(&indicatorLED);                          // Toggle indicator LED
             }
         }
+
         Schedule.debounce.sec = 0;
         Schedule.debounce.ms = -1;
         flag.debounce = 0;
@@ -520,6 +505,8 @@ void indicatorLEDTest(int port, int pin)
     indicatorLED.port = port;
     indicatorLED.pin = pin;
 
+    compUsed = '0';
+
     // Setup indicator LED
     indicatorLEDSetup(&indicatorLED);               // Set up the Indicator LED
     
@@ -544,6 +531,8 @@ void startButtonTest(int port, int pin)
     startButton.port = port;
     startButton.pin = pin;
     startButton.val = 0;
+
+    compUsed = '1';
 
     // Setup start button
     setupButton(&startButton);                                          // Selects start button input and sets up port 1 interrupt for button
@@ -589,6 +578,8 @@ void sideSelectSwitchTest(char port, int pin)
     sideSelect.pin = pin;
     sideSelect.val = 0;
 
+    compUsed = '2';
+
     // Setup slide switch, start button and indicator LED
     setupSwitch(&sideSelect);                                           // Selects side switch
     setupButton(&startButton);                                          // Selects start button input and sets up port 1 interrupt for button
@@ -628,8 +619,10 @@ void driveTest(int anode, int cathode )
     motorDrive.pwm.ms = MOTOR_PWM_PERIOD;
     motorDrive.pwm.aSec = 0;
     motorDrive.pwm.aMs = SPEED_TOP;
-    motorDrive.pwm.state = 1;
-                                                                        // Sets a ms period & duty cycle, initializing to HIGH
+
+
+    compUsed = '3';
+
     // Setup H-Bridge and rear DC motor
     motorSetup(&motorDrive);                                            // Set up ports and timing for the motor for driving
     indicatorLEDSetup(&indicatorLED);                                   // Set up the Indicator LED
@@ -642,8 +635,8 @@ void driveTest(int anode, int cathode )
     motorDrive.direction = OFF;                                         // At the beginning the car will stay stationary
 
     // Set half second timer for motor to drive car forward
-    timeIncrement(&Schedule.initiallyMoveForward, 0, 500);
-    movementStage = 0;
+    timeIncrement(&Schedule.nextMovement, 0, 500);
+    movementStage = 7;
 
     //Enable global interrupts
     __bis_SR_register(GIE);
@@ -675,6 +668,8 @@ void steerTest(int anode, int cathode)
     motorSteer.pwm.aSec = 0;
     motorSteer.pwm.aMs = MOTOR_PWM_PERIOD;
     motorSteer.pwm.state = 1;
+
+    compUsed = '4';
 
     // Setup H-Bridge and front DC motor
     motorSetup(&motorSteer);                                                            // Set up ports and timing for the motor for driving
@@ -718,6 +713,8 @@ void servoTest(int port, int pin)
     servoA.speed = (PWM_SERVO_UPPER-PWM_SERVO_LOWER)/NUMBER_OF_ANGLES_CHECKED;
     servoA.direction = 0;
 
+    compUsed = '5';
+
     // Setup servo
     servoSetup(&servoA);                                                // Set up port and timing for the servo and set servo to turn clockwise
     setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
@@ -760,6 +757,8 @@ extern void sonarTest(int trig, int echoPin, int echoPort)
     ultraSONAR.trigPin = trig;
     ultraSONAR.echoPin = echoPin;
     ultraSONAR.port = echoPort;
+
+    compUsed = '6';
 
     // Setup device
     ultrasonicSetup(&ultraSONAR);                                       // Set up pin for the left ultrasonic
@@ -805,6 +804,8 @@ extern void leftTest(int trig, int echoPin, int echoPort)
     ultraLeft.trigPin = trig;
     ultraLeft.echoPin = echoPin;
     ultraLeft.port = echoPort;
+
+    compUsed = '7';
 
     // Setup device
     ultrasonicSetup(&ultraLeft);                                        // Set up pin for the left ultrasonic
@@ -852,6 +853,8 @@ extern void rightTest(int trig, int echoPin, int echoPort)
     ultraRight.echoPin = echoPin;
     ultraRight.port = echoPort;
 
+    compUsed = '8';
+
     // Setup right ultrasonic
     ultrasonicSetup(&ultraRight);                                       // Set up pin for the right ultrasonic
     indicatorLEDSetup(&indicatorLED);                                   // Set up the Indicator LED
@@ -894,6 +897,8 @@ void irTest(int port, int pin)
     irFront.pin = pin;
     irFront.colour = 2;
 
+    compUsed = '9';
+
     // Setup infrared
     setupIR(&irFront);                              // Selects IR input
     indicatorLEDSetup(&indicatorLED);               // Set up the Indicator LED
@@ -934,7 +939,7 @@ __interrupt void Timer0_A0_ISR(void)
     }
     flag.timerA0 = 1;                                               // Tells checkFlags to see if program needs to action anything
 
-    if(ultraUsed)
+    if(compUsed == '6' || compUsed == '7' || compUsed == '8')
     {
         // If wrap occurs during ultrasonic pulse
         if (ultraSONAR.timeNumber != 0)

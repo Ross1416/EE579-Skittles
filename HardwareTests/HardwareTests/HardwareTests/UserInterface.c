@@ -66,24 +66,24 @@ void readButton(struct Button *butt)
 {
 	if(butt->port == 1)
 	{
-		if(P1IN & (butt->pin))                         		    // Black skittle or environment was detected
+		if(P1IN & (butt->pin))                         		    // Start button hasn't been pressed
         {
-			butt->val = 1;                         			    // 1 for black
+			butt->val = 0;                         			    // Start button is 0 (not pressed)
         }
-        else                                          			// White skittle was detected
+        else
         {
-			butt->val = 0;                         			    // 0 for white
+			butt->val = 1;                         			    // Start button is 1 (pressed)
         }
 	}
     else if(butt->port == 2)
     {
-		if(P2IN & (butt->pin))                         		// Black skittle or environment was detected
+		if(P2IN & (butt->pin))                         		    // Start button hasn't been pressed
         {
-			butt->val = 1;                         			// 1 for black
+			butt->val = 1;                         			    // Start button is 0 (not pressed)
         }
-        else                                          			// White skittle was detected
+        else
         {
-            butt->val = 0;                         			// 0 for white
+            butt->val = 0;                         			    // Start button is 1 (pressed)
         }
 	}
 }
