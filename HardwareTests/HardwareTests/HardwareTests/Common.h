@@ -27,7 +27,9 @@ Change History
 25-APR-2024 andrewlaw9178 fixed LED and button and added drive tests
 26-APR-2024 andrewlaw9178 added steer and servo test
 29-APR-2024 andrewlaw9178 changed comments and added ultrasonic
-01-MAY-2024 andrewlaw9178 changed comments, fixed ultrasonics and added IR
+01-MAY-2024 andrewlaw9178 changed comments, fixed ultrasonics and added IR and
+            side switches
+02-MAY-2024 andrewlaw9178 added minor changes
 --------------------------------------------------------------------------------
 */
 #ifndef COMMON_H
@@ -67,7 +69,7 @@ unsigned int movementStageSteer;                                        // To go
 // Important Ultrasonic Info
 #define SOUND_SPEED 343
 #define CLOCK_USED_ULTRASONIC   SMCK_FREQ
-unsigned char ultraUsed;
+unsigned char compUsed;
 
 // Defines structure for program timing
 struct Time {
@@ -171,9 +173,9 @@ extern void setupTimerRADAR();
 extern void setupTimerSONAR();
 extern void initLEDPHY(int port, int pin);
 void initStartButtonPHY(int port, int pin);
-extern void isUltrasonicUsed(char yesNo);
 
 // Prototypes for main.c
+extern void selectComponent(int component);
 extern void indicatorLEDTest(int port, int pin);
 extern void startButtonTest(int port, int pin);
 extern void sideSelectSwitchTest(char port, int pin);

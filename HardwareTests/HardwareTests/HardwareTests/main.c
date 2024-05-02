@@ -30,6 +30,7 @@ Change History
 29-APR-2024 andrewlaw9178 changed comments and added ultrasonic
 01-MAY-2024 andrewlaw9178 changed comments, fixed ultrasonics and added IR and
             side select switch
+02-MAY-2024 andrewlaw9178 changed the structure around
 --------------------------------------------------------------------------------
 */
 
@@ -61,24 +62,30 @@ Change History
 #define SIDE_SELECT_SWITCH_PORT 1               // Located at Port 1
 #define SIDE_SELECT_SWITCH_PIN  BIT1            // Located at P1.1
 
+int main(void)
+{
+    //Stop watchdog timer
+    WDTCTL = WDTPW | WDTHOLD;
+
+    while(1)
+    {
+        // Enter 1 for indicator LED test
+        // Enter 2 for start button test
+        // Enter 3 for slide switch
+        // Enter 4 for drive test
+        // Enter 5 for steer test
+        // Enter 6 for servo test
+        // Enter 7 for SONAR ultrasonic test
+        // Enter 8 for LEFT ultrasonic test
+        // Enter 9 for RIGHT ultrasonic test
+        // Enter 10 for Infrared test
+
+        selectComponent(9);
+    }
+}
+
 void selectComponent(int component)
 {
-    if(component > 6 && component < 10)
-    {
-        isUltrasonicUsed(1);                    // Ultrasonic component is being tested
-    }
-    else
-    {
-        if(component == 10)
-        {
-            isUltrasonicUsed(0);                // IR component is being tested
-        }
-        else
-        {
-            isUltrasonicUsed(0);                // Ultra and IR not being tested
-        }
-    }
-
     switch(component)
     {
         case 1:
@@ -132,28 +139,6 @@ void selectComponent(int component)
         default:
             // Handle invalid option
             break;
-    }
-}
-
-int main(void)
-{
-    //Stop watchdog timer
-    WDTCTL = WDTPW | WDTHOLD;
-
-    while(1)
-    {
-        // Enter 1 for indicator LED test
-        // Enter 2 for start button test
-        // Enter 3 for slide switch
-        // Enter 4 for steer test
-        // Enter 5 for drive test
-        // Enter 6 for servo test
-        // Enter 7 for SONAR ultrasonic test
-        // Enter 8 for LEFT ultrasonic test
-        // Enter 9 for RIGHT ultrasonic test
-        // Enter 10 for Infrared test
-
-        selectComponent(10);
     }
 }
 
