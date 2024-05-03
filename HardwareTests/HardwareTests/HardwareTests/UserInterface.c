@@ -9,6 +9,7 @@ Change History
 --------------------------------------------------------------------------------
 01-MAY-2024 andrewlaw9178 edited Button.c and IndicatorLED.c and combined them
             such that this file is functionally the same as CarReorganised.
+02-MAY-2024 andrewlaw9178 changed comments on switch read.
 --------------------------------------------------------------------------------
 */
 
@@ -95,22 +96,22 @@ void readSwitch(struct Switch *sw)
 	{
 		if((P1IN & (sw->pin)) == sw->pin)
 		{
-			sw->val = 1;                         				// 1 for Right
+			sw->val = 1;                         				// 1 for Left
 		}
 		else
 		{
-			sw->val = 0;                         				// 0 for Left
+			sw->val = 0;                         				// 0 for Right
 		}
 	}
 	else if(sw->port == 2)
 	{
 		if(P2IN & (sw->pin))                         
 		{
-			sw->val = 1;                         				// 1 for Right
+			sw->val = 1;                         				// 1 for Left
 		}
 		else                                          
 		{
-			sw->val = 0;                         				// 0 for Left
+			sw->val = 0;                         				// 0 for Right
 		}
 	}
 }

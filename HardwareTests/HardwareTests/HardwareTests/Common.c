@@ -226,7 +226,8 @@ void checkSchedule()
             motorDrive.direction = FORWARD;
             flag.motorDrive = 1;
             motorDrive.pwm.aMs = SPEED_SLOW;
-            indicatorLEDOff(&indicatorLED);                             // Turn off indicator LED
+            indicatorLEDOff(&blueLED);                                          // Turn the blue indicator LED off
+            indicatorLEDOn(&redLED);                                            // Turn the red  indicator LED on
         }
         else if(movementStage == 4)
         {
@@ -252,7 +253,9 @@ void checkSchedule()
             motorDrive.direction = FORWARD;
             flag.motorDrive = 1;
             motorDrive.pwm.aMs = SPEED_TOP;
-            indicatorLEDOn(&indicatorLED);                              // Turn on indicator LED
+
+            indicatorLEDOn(&blueLED);                                           // Turn the blue indicator LED on
+            indicatorLEDOff(&redLED);                                           // Turn the red  indicator LED off
         }
 
         if(movementStage == 7)
@@ -266,7 +269,7 @@ void checkSchedule()
         }
 
         // Schedule next movement
-        timeIncrement(&Schedule.nextMovement, 0, 500);
+        timeIncrement(&Schedule.nextMovement, 3, 0);
     }
 
     // Creating and controlling PWM for steer DC motor
@@ -347,7 +350,7 @@ void checkSchedule()
         }
 
         // Schedule next movement
-        timeIncrement(&Schedule.nextMovementSteer, 0, 500);
+        timeIncrement(&Schedule.nextMovementSteer, 3, 0);
     }
 
     // Check if time to move servo
@@ -365,7 +368,8 @@ void checkSchedule()
     if (isTime(Schedule.ultraSONARStart))
     {
         ultrasonicTrigger(&ultraSONAR);
-        indicatorLEDOn(&indicatorLED);          // Turn on indicator LED
+        indicatorLEDOn(&redLED);                                        // Turn on red indicator LED
+        indicatorLEDOn(&blueLED);                                       // Turn on blue indicator LED
         // Disable schedule
         Schedule.ultraSONARStart.sec = 0;
         Schedule.ultraSONARStart.ms = -1;
@@ -375,7 +379,7 @@ void checkSchedule()
     if (isTime(Schedule.ultraLeftStart))
     {
         ultrasonicTrigger(&ultraLeft);
-        indicatorLEDOn(&indicatorLED);          // Turn on indicator LED
+        indicatorLEDOn(&blueLED);                                       // Turn on blue indicator LED
         // Disable schedule
         Schedule.ultraLeftStart.sec = 0;
         Schedule.ultraLeftStart.ms = -1;
@@ -385,7 +389,7 @@ void checkSchedule()
     if (isTime(Schedule.ultraRightStart))
     {
         ultrasonicTrigger(&ultraRight);
-        indicatorLEDOn(&indicatorLED);          // Turn on indicator LED
+        indicatorLEDOn(&redLED);                                        // Turn on red indicator LED
         // Disable schedule
         Schedule.ultraRightStart.sec = 0;
         Schedule.ultraRightStart.ms = -1;
@@ -401,22 +405,8 @@ void checkFlags()
         readButton(&startButton);
         if(startButton.val)                                             // If start button still pressed after debounce
         {
-            if(compUsed == '2')                                          // If side select switch is being tested
-            {
-                readSwitch(&sideSelect);
-                if(sideSelect.val == 0)                                 // If side select switch is Left
-                {
-                    indicatorLEDOn(&indicatorLED);                      // Turn on indicator LED
-                }
-                else
-                {
-                    indicatorLEDOff(&indicatorLED);                     // Turn off indicator LED
-                }
-            }
-            else
-            {
-                indicatorLEDToggle(&indicatorLED);                          // Toggle indicator LED
-            }
+            indicatorLEDToggle(&redLED);                           // Toggle red LED
+            indicatorLEDToggle(&blueLED);                          // Toggle blue LED
         }
 
         Schedule.debounce.sec = 0;
@@ -473,7 +463,8 @@ void checkFlags()
     // SONAR ultrasonic has reading ready
     if (flag.ultraSONARRead)
     {
-        indicatorLEDOff(&indicatorLED);         // Turn off indicator LED
+        indicatorLEDOff(&redLED);           // Turn off red indicator LED
+        indicatorLEDOff(&blueLED);          // Turn off blue indicator LED
         flag.ultraSONARRead = 0;
         // Schedule next reading from left ultrasonic
         timeIncrement(&(Schedule.ultraSONARStart), 0, 120);
@@ -482,7 +473,7 @@ void checkFlags()
     // Left wall ultrasonic has reading ready
     if (flag.ultraLeftWallRead)
     {
-        indicatorLEDOff(&indicatorLED);         // Turn off indicator LED
+        indicatorLEDOff(&blueLED);         // Turn off blue indicator LED
         flag.ultraLeftWallRead = 0;
         // Schedule next reading from left ultrasonic
         timeIncrement(&(Schedule.ultraLeftStart), 0, 120);
@@ -491,7 +482,7 @@ void checkFlags()
     // Right wall ultrasonic has reading ready
     if (flag.ultraRightWallRead)
     {
-        indicatorLEDOff(&indicatorLED);         // Turn off indicator LED
+        indicatorLEDOff(&redLED);         // Turn off blue indicator LED
         flag.ultraRightWallRead = 0;
         // Schedule next reading from right ultrasonic
         timeIncrement(&(Schedule.ultraRightStart), 0, 120);
@@ -499,29 +490,35 @@ void checkFlags()
 }
 
 // Execute indicator LED test
-void indicatorLEDTest(int port, int pin)
+void indicatorLEDsTest(int redPort, int redPin, int bluePort, int bluePin)
 {
-    // Indicator LED information
-    indicatorLED.port = port;
-    indicatorLED.pin = pin;
+    // Indicator LEDs information
+    redLED.port = redPort;
+    redLED.pin = redPin;
+    blueLED.port = bluePort;
+    blueLED.pin = bluePin;
 
     compUsed = '0';
 
-    // Setup indicator LED
-    indicatorLEDSetup(&indicatorLED);               // Set up the Indicator LED
+    // Setup indicator LEDs
+    indicatorLEDSetup(&redLED);                                         // Set up the red indicator LED
+    indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
     
     while(1)
     {
-        indicatorLEDOn(&indicatorLED);              // Turn on indicator LED
+        indicatorLEDOn(&redLED);                                        // Turn on the red indicator LED
+        indicatorLEDOn(&blueLED);                                       // Turn on the blue indicator LED
     }
 }
 
 // Initalise indicator LED for all tests bar indicator LED test
-void initLEDPHY(int port, int pin)
+void initLEDsPHY(int redPort, int redPin, int bluePort, int bluePin)
 {
-    // Indicator LED information
-    indicatorLED.port = port;
-    indicatorLED.pin = pin;
+    // Indicator LEDs information
+    redLED.port = redPort;
+    redLED.pin = redPin;
+    blueLED.port = bluePort;
+    blueLED.pin = bluePin;
 }
 
 // Execute start button test
@@ -534,9 +531,10 @@ void startButtonTest(int port, int pin)
 
     compUsed = '1';
 
-    // Setup start button
+    // Setup start button, indicator LEDs and timer
     setupButton(&startButton);                                          // Selects start button input and sets up port 1 interrupt for button
-    indicatorLEDSetup(&indicatorLED);                                   // Set up the Indicator LED
+    indicatorLEDSetup(&redLED);                                         // Set up the red indicator LED
+    indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
     setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
 
     // Disable schedules
@@ -582,28 +580,26 @@ void sideSelectSwitchTest(char port, int pin)
 
     // Setup slide switch, start button and indicator LED
     setupSwitch(&sideSelect);                                           // Selects side switch
-    setupButton(&startButton);                                          // Selects start button input and sets up port 1 interrupt for button
-    indicatorLEDSetup(&indicatorLED);                                   // Set up the Indicator LED
-    setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
+    indicatorLEDSetup(&redLED);                                         // Set up the red indicator LED
+    indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
 
-    // Disable schedules
-    Schedule.debounce.sec = 0;
-    Schedule.debounce.ms = -1;                                          // Waits until button is pressed
-
-    //Enable global interrupts
+        //Enable global interrupts
     __bis_SR_register(GIE);
+
 
     //Main loop
     while(1)
     {
-        if (flag.timerA0)                                               // Every 2ms timer intterupt triggers (producing soft clock)
+        readSwitch(&sideSelect);
+        if(sideSelect.val == 1)                                 // If side select switch is Left
         {
-            checkSchedule();                                            // If button has been pressed wait for debouncing time to verify
-            flag.timerA0 = 0;
+            indicatorLEDOn(&blueLED);                           // Turn blue LED on
+            indicatorLEDOff(&redLED);                           // Turn red LED off
         }
         else
         {
-            checkFlags();                                               // Check if button has been pressed, and if still pressed after 20ms
+            indicatorLEDOff(&blueLED);                          // Turn blue LED off
+            indicatorLEDOn(&redLED);                            // Turn red LED on
         }
     }
 }
@@ -620,12 +616,12 @@ void driveTest(int anode, int cathode )
     motorDrive.pwm.aSec = 0;
     motorDrive.pwm.aMs = SPEED_TOP;
 
-
     compUsed = '3';
 
     // Setup H-Bridge and rear DC motor
     motorSetup(&motorDrive);                                            // Set up ports and timing for the motor for driving
-    indicatorLEDSetup(&indicatorLED);                                   // Set up the Indicator LED
+    indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
+    indicatorLEDSetup(&redLED);                                         // Set up the red indicator LED
     setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
 
     // Start drive DC motor PWM schedules but set its output to do nothing
@@ -635,7 +631,7 @@ void driveTest(int anode, int cathode )
     motorDrive.direction = OFF;                                         // At the beginning the car will stay stationary
 
     // Set half second timer for motor to drive car forward
-    timeIncrement(&Schedule.nextMovement, 0, 500);
+    timeIncrement(&Schedule.nextMovement, 3, 0);
     movementStage = 7;
 
     //Enable global interrupts
@@ -681,9 +677,8 @@ void steerTest(int anode, int cathode)
     motorSteer.direction = STRAIGHT;                                                    // At the beginning the car will point STRAIGHT
     flag.motorSteer = 1;
 
-
     // Set half second timer for motor to drive car forward
-    timeIncrement(&Schedule.nextMovementSteer, 0, 500);
+    timeIncrement(&Schedule.nextMovementSteer, 3, 0);
     movementStageSteer = 0;
 
     //Enable global interrupts
@@ -762,15 +757,16 @@ extern void sonarTest(int trig, int echoPin, int echoPort)
 
     // Setup device
     ultrasonicSetup(&ultraSONAR);                                       // Set up pin for the left ultrasonic
-    indicatorLEDSetup(&indicatorLED);                                   // Set up the Indicator LED
+    indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
+    indicatorLEDSetup(&redLED);                                         // Set up the red indicator LED
     setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
 
     // Disable schedule
     Schedule.ultraSONARStart.sec = 0;
     Schedule.ultraSONARStart.ms = -1;
 
-    // Start getting first measurement after 0.12 seconds
-    timeIncrement(&(Schedule.ultraSONARStart), 0, 120);
+    // Start getting first measurement after 1seconds
+    timeIncrement(&(Schedule.ultraSONARStart), 1, 0);
 
     // Disable flag
     flag.ultraSONARRead = 0;
@@ -809,7 +805,7 @@ extern void leftTest(int trig, int echoPin, int echoPort)
 
     // Setup device
     ultrasonicSetup(&ultraLeft);                                        // Set up pin for the left ultrasonic
-    indicatorLEDSetup(&indicatorLED);                                   // Set up the Indicator LED
+    indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
     setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
     setupTimerSONAR();
 
@@ -817,8 +813,8 @@ extern void leftTest(int trig, int echoPin, int echoPort)
     Schedule.ultraLeftStart.sec = 0;
     Schedule.ultraLeftStart.ms = -1;
 
-    // Start getting first measurement after 0.12 seconds
-    timeIncrement(&(Schedule.ultraLeftStart), 0, 120);
+    // Start getting first measurement after 1 seconds
+    timeIncrement(&(Schedule.ultraLeftStart), 1, 0);
 
     // Disable flag
     flag.ultraLeftWallRead = 0;
@@ -857,7 +853,7 @@ extern void rightTest(int trig, int echoPin, int echoPort)
 
     // Setup right ultrasonic
     ultrasonicSetup(&ultraRight);                                       // Set up pin for the right ultrasonic
-    indicatorLEDSetup(&indicatorLED);                                   // Set up the Indicator LED
+    indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
     setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
     setupTimerSONAR();
 
@@ -865,8 +861,8 @@ extern void rightTest(int trig, int echoPin, int echoPort)
     Schedule.ultraRightStart.sec = 0;
     Schedule.ultraRightStart.ms = -1;
 
-    // Start getting first measurement after 0.12 seconds
-    timeIncrement(&(Schedule.ultraRightStart), 0, 120);
+    // Start getting first measurement after 1 seconds
+    timeIncrement(&(Schedule.ultraRightStart), 1, 0);
 
     // Disable flag
     flag.ultraRightWallRead = 0;
@@ -900,19 +896,21 @@ void irTest(int port, int pin)
     compUsed = '9';
 
     // Setup infrared
-    setupIR(&irFront);                              // Selects IR input
-    indicatorLEDSetup(&indicatorLED);               // Set up the Indicator LED
-
+    setupIR(&irFront);                                                  // Selects IR input
+    indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
+    indicatorLEDSetup(&redLED);                                         // Set up the red indicator LED
     while (1)
     {
         readIR(&irFront);
         if(irFront.colour == 1)
         {
-            indicatorLEDOn(&indicatorLED);          // Turn on indicator LED
+            indicatorLEDOn(&blueLED);                                   // Turn on indicator blue LED
+            indicatorLEDOn(&redLED);                                    // Turn on indicator red LED
         }
         else if(irFront.colour == 0)
         {
-            indicatorLEDOff(&indicatorLED);         // Turn off indicator LED
+            indicatorLEDOff(&blueLED);                                   // Turn off indicator blue LED
+            indicatorLEDOff(&redLED);                                    // Turn off indicator red LED
         }
     }
 }

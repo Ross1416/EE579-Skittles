@@ -9,7 +9,8 @@ Change History
 --------------------------------------------------------------------------------
 31-MAR-2024 SARK created to restructure AutonomousCar project
 15-APR-2024 andrewlaw9178 set P2.0 to always be the trigger pin
-17-APR-2024 andrewlaw9178 added comments
+17-APR-2024 andrewlaw9178 added comments,
+02-MAY-2024 andrewlaw9178 altered line 29-32 SONAR trig
 --------------------------------------------------------------------------------
 */
 
@@ -26,10 +27,10 @@ void ultrasonicSetup(struct Ultrasonic *ultra)
         P1DIR &= ~ultra->echoPin;                               // Sets pin as an input (voltage divider)
 
         // Trig pin
-        //P1DIR |= ultra->trigPin;                                // Sets pin as an output
-        //P1OUT &= ~ultra->trigPin;                               // Sets pin as LOW
-        P2DIR |= BIT0;
-        P2OUT &= ~BIT0;
+        P1DIR |= ultra->trigPin;                                // Sets pin as an output
+        P1OUT &= ~ultra->trigPin;                               // Sets pin as LOW
+        //P2DIR |= BIT0;
+        //P2OUT &= ~BIT0;
 
         // Set capture compare to the ultrasonic being used
         if (ultra->echoPin == BIT2)
