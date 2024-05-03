@@ -31,6 +31,8 @@ Change History
 01-MAY-2024 andrewlaw9178 changed comments, fixed ultrasonics and added IR and
             side select switch
 02-MAY-2024 andrewlaw9178 changed the structure around
+02-MAY-2024 Ross1416 Added 1s starting delay for ultrasonics to allow working on
+            final car
 --------------------------------------------------------------------------------
 */
 
@@ -67,7 +69,7 @@ Change History
 int main(void)
 {
     //Stop watchdog timer
-    WDTCTL = WDTPW | WDTHOLD;
+     WDTCTL = WDTPW | WDTHOLD;
 
     while(1)
     {
@@ -82,7 +84,7 @@ int main(void)
         // Enter 9 for RIGHT ultrasonic test
         // Enter 10 for Infrared test
 
-        selectComponent(8);
+        selectComponent(10);
     }
 }
 
@@ -124,7 +126,7 @@ void selectComponent(int component)
             sonarTest(ULTRA_SONAR_TRIG, ULTRA_SONAR_ECHO, ULTRA_SONAR_PORT);
             break;
         case 8:
-            // Right ultrasonic test has been selected
+            // Left ultrasonic test has been selected
             initLEDsPHY(RED_LED_PORT, RED_LED_PIN, BLUE_LED_PORT, BLUE_LED_PIN);
             leftTest(ULTRA_LEFT_TRIG, ULTRA_LEFT_ECHO, ULTRA_LEFT_PORT);
             break;

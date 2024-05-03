@@ -379,7 +379,7 @@ void checkSchedule()
     if (isTime(Schedule.ultraLeftStart))
     {
         ultrasonicTrigger(&ultraLeft);
-        indicatorLEDOn(&blueLED);                                       // Turn on blue indicator LED
+        indicatorLEDOn(&redLED);                                       // Turn on red indicator LED
         // Disable schedule
         Schedule.ultraLeftStart.sec = 0;
         Schedule.ultraLeftStart.ms = -1;
@@ -389,7 +389,7 @@ void checkSchedule()
     if (isTime(Schedule.ultraRightStart))
     {
         ultrasonicTrigger(&ultraRight);
-        indicatorLEDOn(&redLED);                                        // Turn on red indicator LED
+        indicatorLEDOn(&blueLED);                                        // Turn on blue indicator LED
         // Disable schedule
         Schedule.ultraRightStart.sec = 0;
         Schedule.ultraRightStart.ms = -1;
@@ -473,7 +473,7 @@ void checkFlags()
     // Left wall ultrasonic has reading ready
     if (flag.ultraLeftWallRead)
     {
-        indicatorLEDOff(&blueLED);         // Turn off blue indicator LED
+        indicatorLEDOff(&redLED);         // Turn off blue indicator LED
         flag.ultraLeftWallRead = 0;
         // Schedule next reading from left ultrasonic
         timeIncrement(&(Schedule.ultraLeftStart), 0, 120);
@@ -482,7 +482,7 @@ void checkFlags()
     // Right wall ultrasonic has reading ready
     if (flag.ultraRightWallRead)
     {
-        indicatorLEDOff(&redLED);         // Turn off blue indicator LED
+        indicatorLEDOff(&blueLED);         // Turn off blue indicator LED
         flag.ultraRightWallRead = 0;
         // Schedule next reading from right ultrasonic
         timeIncrement(&(Schedule.ultraRightStart), 0, 120);
@@ -760,7 +760,9 @@ extern void sonarTest(int trig, int echoPin, int echoPort)
     indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
     indicatorLEDSetup(&redLED);                                         // Set up the red indicator LED
     setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
-
+//    P1DIR |= BIT0;
+//    P1SEL &= ~(BIT0);
+//    P1OUT &= ~(BIT0+BIT2);
     // Disable schedule
     Schedule.ultraSONARStart.sec = 0;
     Schedule.ultraSONARStart.ms = -1;
@@ -805,7 +807,7 @@ extern void leftTest(int trig, int echoPin, int echoPort)
 
     // Setup device
     ultrasonicSetup(&ultraLeft);                                        // Set up pin for the left ultrasonic
-    indicatorLEDSetup(&blueLED);                                        // Set up the blue indicator LED
+    indicatorLEDSetup(&redLED);                                        // Set up the blue indicator LED
     setupTimerSchedule();                                               // Sets up scheduling for Time0 A0 interrupt which produces the 2ms clock cycle which program runs off of
     setupTimerSONAR();
 
@@ -979,7 +981,7 @@ __interrupt void Timer0_A1_ISR(void)
             TA0CCTL2 &= ~CCIFG;                                             // Clear CCR2 interrupt flag
             break;
 
-        case 0xA:   break;
+//        case 0xA:   break;
     }
 }
 

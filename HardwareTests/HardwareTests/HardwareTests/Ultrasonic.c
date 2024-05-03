@@ -82,9 +82,9 @@ void ultrasonicTrigger(struct Ultrasonic *ultra)
         }
 
         // Trigger ultrasonic to get distance reading
-        P2OUT |= ultra->trigPin;                                // Set output pin as HIGH
+        P1OUT |= ultra->trigPin;                                // Set output pin as HIGH
         __delay_cycles(20);
-        P2OUT &= ~ultra->trigPin;                               // Then set it LOW - remmebr to go back to P1OUT
+        P1OUT &= ~ultra->trigPin;                               // Then set it LOW
     }
 
     if (ultra->port == 2)                                       // Stationary ultrasonic
