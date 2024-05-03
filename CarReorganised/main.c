@@ -192,7 +192,7 @@ void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int
 //Wall readings control
 #define WALL_READINGS   5                   //Number of wall readings remembered (MAKE 1+2^x)
 #define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1), used to computationally effiecient find average
-#define TIME_BEFORE_SEARCHING   8           //
+#define TIME_BEFORE_SEARCHING   4           //
 #define FIND_SPEED    45
 #define SPRINT_SPEED  60
 
@@ -211,8 +211,8 @@ void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int
 #define CAN_ALIGN_SPEED 45                  //Speed to readjust
 #define INITIAL_CAN_ALIGN_SEC   0           //Time to readjust from parallel
 #define INITIAL_CAN_ALIGN_MS    900
-#define SECONDARY_CAN_ALIGN_SEC 0           //Time to readjust after approach
-#define SECONDARY_CAN_ALIGN_MS  400
+#define SECONDARY_CAN_ALIGN_SEC 1           //Time to readjust after approach
+#define SECONDARY_CAN_ALIGN_MS  100
 
 //CAN APPROACH
 #define FACE_CAN_ANGLE_TOLERANCE    250     //Directly facing tolerance
@@ -1183,7 +1183,7 @@ void stateControl()
 			Schedule.stateChange.sec = 0;
 			Schedule.stateChange.ms = -1;
 
-			timeIncrement(&Schedule.searchStart, 2, 0);
+			timeIncrement(&Schedule.searchStart, 0, 500);
 		}
 		
 		//On ultrasonic left read
@@ -1292,7 +1292,7 @@ void stateControl()
 					Schedule.stateChange.ms = -1;
 
 					//Start searching immediately
-					timeIncrement(&Schedule.searchStart, 0, 300);
+					timeIncrement(&Schedule.searchStart, 0, 500);
 				}
 			}
         }
@@ -1870,7 +1870,7 @@ void alignToWall()
         }
     }
 
-    if ((largeChange > 0) && (largeChange <= 2))   //Probably just wall change so ignore for this reading
+    if ((largeChange > 0) && (largeChange <= 1))   //Probably just wall change so ignore for this reading
     {
         turnState = STRAIGHT;
     }
@@ -2011,7 +2011,10 @@ void    canLock()
                 updateCarHeading(FORWARD, STRAIGHT, CAN_APPROACH_SPEED);
             }
 
-            expectedCanDistance = SONARDistances[0] + 200;
+            findDistanceAverage(1, SONAR_READINGS, SONARDistances);
+
+            expectedCanDistance = avgReading;
+            //expectedCanDistance = SONARDistances[0] + 200;
             lostCan = 0;
             lostCount = 0;
 
@@ -2027,7 +2030,11 @@ void    canLock()
                 //Probably just moved off can so change SONAR direction
                 servoSONAR.direction ^= 1;
             }
-            else if (lostCount > 4)
+            else if (lostCount == 3)
+            {
+                servoSONAR.direction ^= 1;
+            }
+            else if (lostCount > 8)
             {
                 //If lost for too long return to scan
                 nextState = SONAR_SCAN;
@@ -2076,7 +2083,9 @@ void    canLock()
             lostCan = 0;
             lostCount = 0;
 
-            expectedCanDistance = SONARDistances[0]+200; //Update latest distance to can
+            findDistanceAverage(1, SONAR_READINGS, SONARDistances);
+
+            expectedCanDistance = avgReading; //SONARDistances[0]+200; //Update latest distance to can
 
             indicatorLEDOn(&LEDRed);
             timeIncrement(&Schedule.ultraSONARStart, 0, 20);
@@ -2215,7 +2224,7 @@ void SONAR()
 
                 //Set angle to point at
                 newAngle = PWM_SERVO_UPPER;
-                for (j=NUMBER_OF_ANGLES_CHECKED;j>canAnomaly;j--)
+                for (j=NUMBER_OF_ANGLES_CHECKED;j>canAnomaly+1;j--)
                 {
                     newAngle -= servoSONAR.speed;
                 }
@@ -2307,7 +2316,7 @@ void circumnavigate()
 		nextState = SEARCH;
 		flag.stateChange = 1;
 		Schedule.stateChange.ms = -1;
-		timeIncrement(&Schedule.searchStart, 3, 0);
+		timeIncrement(&Schedule.searchStart, 0, 500);
 	}
 }
 

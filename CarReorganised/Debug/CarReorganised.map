@@ -1,10 +1,10 @@
 ******************************************************************************
                   MSP430 Linker PC v21.6.1                     
 ******************************************************************************
->> Linked Thu May  2 15:51:44 2024
+>> Linked Fri May  3 12:05:23 2024
 
 OUTPUT FILE NAME:   <CarReorganised.out>
-ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 0000dc36
+ENTRY POINT SYMBOL: "_c_int00_noargs"  address: 0000dc4c
 
 
 MEMORY CONFIGURATION
@@ -19,7 +19,7 @@ MEMORY CONFIGURATION
   INFOC                 00001040   00000040  00000000  00000040  RWIX
   INFOB                 00001080   00000040  00000000  00000040  RWIX
   INFOA                 000010c0   00000040  00000000  00000040  RWIX
-  FLASH                 0000c000   00003fde  00001da6  00002238  RWIX
+  FLASH                 0000c000   00003fde  00001dbc  00002222  RWIX
   BSLSIGNATURE          0000ffde   00000002  00000002  00000000  RWIX  ffff 
   INT00                 0000ffe0   00000002  00000002  00000000  RWIX
   INT01                 0000ffe2   00000002  00000000  00000002  RWIX
@@ -79,62 +79,62 @@ section   page    origin      length       input sections
                   000003b0    00000002     rts430_eabi.lib : boot.c.obj (.stack)
                   000003b2    0000004e     --HOLE--
 
-.text      0    0000c000    00001d3c     
-                  0000c000    00000622     main.obj (.text:stateControl)
-                  0000c622    00000330     main.obj (.text:changingState)
-                  0000c952    0000028e     main.obj (.text:SONAR)
-                  0000cbe0    00000256     main.obj (.text:canLock)
-                  0000ce36    00000238     main.obj (.text:checkFlags)
-                  0000d06e    00000216     main.obj (.text:checkSchedule)
-                  0000d284    00000154     main.obj (.text:alignToWall)
-                  0000d3d8    00000104     main.obj (.text:main)
-                  0000d4dc    000000d2     main.obj (.text:circumnavigate)
-                  0000d5ae    000000b8     main.obj (.text:Timer1_A1_ISR)
-                  0000d666    00000082     Ultrasonic.obj (.text:ultrasonicSetup)
-                  0000d6e8    0000007c     rts430_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
-                  0000d764    00000070     Ultrasonic.obj (.text:ultrasonicTrigger)
-                  0000d7d4    0000005e     main.obj (.text:Timer0_A1_ISR)
-                  0000d832    00000058     UserInterface.obj (.text:setupButton)
-                  0000d88a    0000004c     DCMotor.obj (.text:motorOutput)
-                  0000d8d6    0000004c     rts430_eabi.lib : lsr16.asm.obj (.text)
-                  0000d922    0000004c     main.obj (.text:updateCarHeading)
-                  0000d96e    00000048     main.obj (.text:timeIncrement)
-                  0000d9b6    00000042     rts430_eabi.lib : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit:__TI_auto_init_nobinit_nopinit)
-                  0000d9f8    0000003e     main.obj (.text:Timer0_A0_ISR)
-                  0000da36    0000003e     UserInterface.obj (.text:readSwitch)
-                  0000da74    0000003c     Infrared.obj (.text:IRRead)
-                  0000dab0    00000034     main.obj (.text:findDistanceAverage)
-                  0000dae4    00000034     UserInterface.obj (.text:indicatorLEDSetup)
-                  0000db18    00000034     Servo.obj (.text:servoTurn)
-                  0000db4c    00000034     UserInterface.obj (.text:setupSwitch)
-                  0000db80    0000002c     rts430_eabi.lib : lsl16.asm.obj (.text)
-                  0000dbac    0000002c     main.obj (.text:setupTimerSONAR)
-                  0000dbd8    00000022     Servo.obj (.text:servoSetup)
-                  0000dbfa    00000020     main.obj (.text:setupTimerSchedule)
-                  0000dc1a    0000001c     Infrared.obj (.text:IRSetup)
-                  0000dc36    0000001c     rts430_eabi.lib : boot.c.obj (.text:_c_int00_noargs)
-                  0000dc52    0000001c     UserInterface.obj (.text:indicatorLEDOff)
-                  0000dc6e    0000001c     UserInterface.obj (.text:indicatorLEDOn)
-                  0000dc8a    0000001a     main.obj (.text:Timer1_A0_ISR)
-                  0000dca4    00000016     rts430_eabi.lib : div16u.asm.obj (.text)
-                  0000dcba    00000014                     : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset:__TI_zero_init_nomemset)
-                  0000dcce    00000012                     : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
-                  0000dce0    00000012                     : memcpy.c.obj (.text:memcpy)
-                  0000dcf2    00000010     main.obj (.text:Port1_ISR)
-                  0000dd02    00000010     rts430_eabi.lib : epilog.asm.obj (.text)
-                  0000dd12    0000000e     DCMotor.obj (.text:motorSetup)
-                  0000dd20    00000008     rts430_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
-                  0000dd28    00000008     Servo.obj (.text:servoCenter)
-                  0000dd30    00000006     rts430_eabi.lib : exit.c.obj (.text:abort)
-                  0000dd36    00000004                     : pre_init.c.obj (.text:_system_pre_init)
-                  0000dd3a    00000002                     : startup.c.obj (.text:_system_post_cinit)
+.text      0    0000c000    00001d52     
+                  0000c000    00000624     main.obj (.text:stateControl)
+                  0000c624    00000330     main.obj (.text:changingState)
+                  0000c954    00000288     main.obj (.text:SONAR)
+                  0000cbdc    00000272     main.obj (.text:canLock)
+                  0000ce4e    00000238     main.obj (.text:checkFlags)
+                  0000d086    00000216     main.obj (.text:checkSchedule)
+                  0000d29c    00000152     main.obj (.text:alignToWall)
+                  0000d3ee    00000104     main.obj (.text:main)
+                  0000d4f2    000000d2     main.obj (.text:circumnavigate)
+                  0000d5c4    000000b8     main.obj (.text:Timer1_A1_ISR)
+                  0000d67c    00000082     Ultrasonic.obj (.text:ultrasonicSetup)
+                  0000d6fe    0000007c     rts430_eabi.lib : copy_decompress_lzss.c.obj (.text:decompress:lzss:__TI_decompress_lzss)
+                  0000d77a    00000070     Ultrasonic.obj (.text:ultrasonicTrigger)
+                  0000d7ea    0000005e     main.obj (.text:Timer0_A1_ISR)
+                  0000d848    00000058     UserInterface.obj (.text:setupButton)
+                  0000d8a0    0000004c     DCMotor.obj (.text:motorOutput)
+                  0000d8ec    0000004c     rts430_eabi.lib : lsr16.asm.obj (.text)
+                  0000d938    0000004c     main.obj (.text:updateCarHeading)
+                  0000d984    00000048     main.obj (.text:timeIncrement)
+                  0000d9cc    00000042     rts430_eabi.lib : autoinit.c.obj (.text:__TI_auto_init_nobinit_nopinit:__TI_auto_init_nobinit_nopinit)
+                  0000da0e    0000003e     main.obj (.text:Timer0_A0_ISR)
+                  0000da4c    0000003e     UserInterface.obj (.text:readSwitch)
+                  0000da8a    0000003c     Infrared.obj (.text:IRRead)
+                  0000dac6    00000034     main.obj (.text:findDistanceAverage)
+                  0000dafa    00000034     UserInterface.obj (.text:indicatorLEDSetup)
+                  0000db2e    00000034     Servo.obj (.text:servoTurn)
+                  0000db62    00000034     UserInterface.obj (.text:setupSwitch)
+                  0000db96    0000002c     rts430_eabi.lib : lsl16.asm.obj (.text)
+                  0000dbc2    0000002c     main.obj (.text:setupTimerSONAR)
+                  0000dbee    00000022     Servo.obj (.text:servoSetup)
+                  0000dc10    00000020     main.obj (.text:setupTimerSchedule)
+                  0000dc30    0000001c     Infrared.obj (.text:IRSetup)
+                  0000dc4c    0000001c     rts430_eabi.lib : boot.c.obj (.text:_c_int00_noargs)
+                  0000dc68    0000001c     UserInterface.obj (.text:indicatorLEDOff)
+                  0000dc84    0000001c     UserInterface.obj (.text:indicatorLEDOn)
+                  0000dca0    0000001a     main.obj (.text:Timer1_A0_ISR)
+                  0000dcba    00000016     rts430_eabi.lib : div16u.asm.obj (.text)
+                  0000dcd0    00000014                     : copy_zero_init.c.obj (.text:decompress:ZI:__TI_zero_init_nomemset:__TI_zero_init_nomemset)
+                  0000dce4    00000012                     : copy_decompress_none.c.obj (.text:decompress:none:__TI_decompress_none)
+                  0000dcf6    00000012                     : memcpy.c.obj (.text:memcpy)
+                  0000dd08    00000010     main.obj (.text:Port1_ISR)
+                  0000dd18    00000010     rts430_eabi.lib : epilog.asm.obj (.text)
+                  0000dd28    0000000e     DCMotor.obj (.text:motorSetup)
+                  0000dd36    00000008     rts430_eabi.lib : isr_trap.asm.obj (.text:_isr:__TI_ISR_TRAP)
+                  0000dd3e    00000008     Servo.obj (.text:servoCenter)
+                  0000dd46    00000006     rts430_eabi.lib : exit.c.obj (.text:abort)
+                  0000dd4c    00000004                     : pre_init.c.obj (.text:_system_pre_init)
+                  0000dd50    00000002                     : startup.c.obj (.text:_system_post_cinit)
 
-.cinit     0    0000dd3c    0000006a     
-                  0000dd3c    00000057     (.cinit..data.load) [load image, compression = lzss]
-                  0000dd93    00000001     --HOLE-- [fill = 0]
-                  0000dd94    00000006     (__TI_handler_table)
-                  0000dd9a    00000004     (.cinit..bss.load) [load image, compression = zero_init]
-                  0000dd9e    00000008     (__TI_cinit_table)
+.cinit     0    0000dd52    0000006a     
+                  0000dd52    00000057     (.cinit..data.load) [load image, compression = lzss]
+                  0000dda9    00000001     --HOLE-- [fill = 0]
+                  0000ddaa    00000006     (__TI_handler_table)
+                  0000ddb0    00000004     (.cinit..bss.load) [load image, compression = zero_init]
+                  0000ddb4    00000008     (__TI_cinit_table)
 
 .binit     0    0000c000    00000000     
 
@@ -198,14 +198,14 @@ MODULE SUMMARY
        Module                       code   ro data   rw data
        ------                       ----   -------   -------
     .\
-       main.obj                     6208   10        307    
+       main.obj                     6230   10        307    
        UserInterface.obj            310    0         0      
        Ultrasonic.obj               242    0         0      
        Servo.obj                    94     0         0      
        DCMotor.obj                  90     0         0      
        Infrared.obj                 88     0         0      
     +--+----------------------------+------+---------+---------+
-       Total:                       7032   10        307    
+       Total:                       7054   10        307    
                                                             
     C:\ti\ccs1240\ccs\tools\compiler\ti-cgt-msp430_21.6.1.LTS\lib\rts430_eabi.lib
        copy_decompress_lzss.c.obj   124    0         0      
@@ -236,19 +236,19 @@ MODULE SUMMARY
        Stack:                       0      0         80     
        Linker Generated:            0      105       0      
     +--+----------------------------+------+---------+---------+
-       Grand Total:                 7484   133       387    
+       Grand Total:                 7506   133       387    
 
 
 LINKER GENERATED COPY TABLES
 
-__TI_cinit_table @ 0000dd9e records: 2, size/record: 4, table size: 8
-	.data: load addr=0000dd3c, load size=00000057 bytes, run addr=00000200, run size=00000135 bytes, compression=lzss
-	.bss: load addr=0000dd9a, load size=00000004 bytes, run addr=00000336, run size=00000002 bytes, compression=zero_init
+__TI_cinit_table @ 0000ddb4 records: 2, size/record: 4, table size: 8
+	.data: load addr=0000dd52, load size=00000057 bytes, run addr=00000200, run size=00000135 bytes, compression=lzss
+	.bss: load addr=0000ddb0, load size=00000004 bytes, run addr=00000336, run size=00000002 bytes, compression=zero_init
 
 
 LINKER GENERATED HANDLER TABLE
 
-__TI_handler_table @ 0000dd94 records: 3, size/record: 2, table size: 6
+__TI_handler_table @ 0000ddaa records: 3, size/record: 2, table size: 6
 	index: 0, handler: __TI_zero_init
 	index: 1, handler: __TI_decompress_lzss
 	index: 2, handler: __TI_decompress_none
@@ -268,7 +268,7 @@ address   name
 00000057  BCSCTL1                       
 00000058  BCSCTL2                       
 00000053  BCSCTL3                       
-0000dd30  C$$EXIT                       
+0000dd46  C$$EXIT                       
 00000059  CACTL1                        
 0000005a  CACTL2                        
 000010fb  CALBC1_12MHZ                  
@@ -289,8 +289,8 @@ address   name
 00000002  IFG1                          
 00000003  IFG2                          
 0000032c  IR                            
-0000da74  IRRead                        
-0000dc1a  IRSetup                       
+0000da8a  IRRead                        
+0000dc30  IRSetup                       
 00000320  LEDBlue                       
 00000324  LEDRed                        
 00000022  P1DIR                         
@@ -317,8 +317,8 @@ address   name
 00000010  P3REN                         
 0000001b  P3SEL                         
 00000043  P3SEL2                        
-0000dcf2  Port1_ISR                     
-0000c952  SONAR                         
+0000dd08  Port1_ISR                     
+0000c954  SONAR                         
 00000266  SONARAtEachAngle              
 000002d4  SONARDistances                
 00000236  Schedule                      
@@ -345,10 +345,10 @@ address   name
 000010c0  TLV_CHECKSUM                  
 000010f7  TLV_DCO_30_LEN                
 000010f6  TLV_DCO_30_TAG                
-0000d9f8  Timer0_A0_ISR                 
-0000d7d4  Timer0_A1_ISR                 
-0000dc8a  Timer1_A0_ISR                 
-0000d5ae  Timer1_A1_ISR                 
+0000da0e  Timer0_A0_ISR                 
+0000d7ea  Timer0_A1_ISR                 
+0000dca0  Timer1_A0_ISR                 
+0000d5c4  Timer1_A1_ISR                 
 0000005d  UCA0ABCTL                     
 00000062  UCA0BR0                       
 00000063  UCA0BR1                       
@@ -373,15 +373,15 @@ address   name
 00000120  WDTCTL                        
 00000400  __STACK_END                   
 00000050  __STACK_SIZE                  
-0000dd9e  __TI_CINIT_Base               
-0000dda6  __TI_CINIT_Limit              
-0000dda6  __TI_CINIT_Warm               
-0000dd94  __TI_Handler_Table_Base       
-0000dd9a  __TI_Handler_Table_Limit      
-0000dd20  __TI_ISR_TRAP                 
-0000d9b6  __TI_auto_init_nobinit_nopinit
-0000d6e8  __TI_decompress_lzss          
-0000dcce  __TI_decompress_none          
+0000ddb4  __TI_CINIT_Base               
+0000ddbc  __TI_CINIT_Limit              
+0000ddbc  __TI_CINIT_Warm               
+0000ddaa  __TI_Handler_Table_Base       
+0000ddb0  __TI_Handler_Table_Limit      
+0000dd36  __TI_ISR_TRAP                 
+0000d9cc  __TI_auto_init_nobinit_nopinit
+0000d6fe  __TI_decompress_lzss          
+0000dce4  __TI_decompress_none          
 0000ffe0  __TI_int00                    
 0000ffe4  __TI_int02                    
 0000ffe6  __TI_int03                    
@@ -398,56 +398,56 @@ address   name
 ffffffff  __TI_pprof_out_hndl           
 ffffffff  __TI_prof_data_size           
 ffffffff  __TI_prof_data_start          
-0000dcba  __TI_zero_init_nomemset       
+0000dcd0  __TI_zero_init_nomemset       
 ffffffff  __c_args__                    
-0000dca4  __mspabi_divu                 
-0000dd0e  __mspabi_func_epilog_1        
-0000dd0c  __mspabi_func_epilog_2        
-0000dd0a  __mspabi_func_epilog_3        
-0000dd08  __mspabi_func_epilog_4        
-0000dd06  __mspabi_func_epilog_5        
-0000dd04  __mspabi_func_epilog_6        
-0000dd02  __mspabi_func_epilog_7        
-0000dca4  __mspabi_remu                 
-0000db80  __mspabi_slli                 
-0000dba8  __mspabi_slli_1               
-0000db96  __mspabi_slli_10              
-0000db94  __mspabi_slli_11              
-0000db92  __mspabi_slli_12              
-0000db90  __mspabi_slli_13              
-0000db8e  __mspabi_slli_14              
-0000db8c  __mspabi_slli_15              
-0000dba6  __mspabi_slli_2               
-0000dba4  __mspabi_slli_3               
-0000dba2  __mspabi_slli_4               
-0000dba0  __mspabi_slli_5               
-0000db9e  __mspabi_slli_6               
-0000db9c  __mspabi_slli_7               
-0000db9a  __mspabi_slli_8               
-0000db98  __mspabi_slli_9               
-0000d8d6  __mspabi_srli                 
-0000d91c  __mspabi_srli_1               
-0000d8f8  __mspabi_srli_10              
-0000d8f4  __mspabi_srli_11              
-0000d8f0  __mspabi_srli_12              
-0000d8ec  __mspabi_srli_13              
-0000d8e8  __mspabi_srli_14              
-0000d8e4  __mspabi_srli_15              
-0000d918  __mspabi_srli_2               
-0000d914  __mspabi_srli_3               
-0000d910  __mspabi_srli_4               
-0000d90c  __mspabi_srli_5               
-0000d908  __mspabi_srli_6               
-0000d904  __mspabi_srli_7               
-0000d900  __mspabi_srli_8               
-0000d8fc  __mspabi_srli_9               
-0000dc36  _c_int00_noargs               
+0000dcba  __mspabi_divu                 
+0000dd24  __mspabi_func_epilog_1        
+0000dd22  __mspabi_func_epilog_2        
+0000dd20  __mspabi_func_epilog_3        
+0000dd1e  __mspabi_func_epilog_4        
+0000dd1c  __mspabi_func_epilog_5        
+0000dd1a  __mspabi_func_epilog_6        
+0000dd18  __mspabi_func_epilog_7        
+0000dcba  __mspabi_remu                 
+0000db96  __mspabi_slli                 
+0000dbbe  __mspabi_slli_1               
+0000dbac  __mspabi_slli_10              
+0000dbaa  __mspabi_slli_11              
+0000dba8  __mspabi_slli_12              
+0000dba6  __mspabi_slli_13              
+0000dba4  __mspabi_slli_14              
+0000dba2  __mspabi_slli_15              
+0000dbbc  __mspabi_slli_2               
+0000dbba  __mspabi_slli_3               
+0000dbb8  __mspabi_slli_4               
+0000dbb6  __mspabi_slli_5               
+0000dbb4  __mspabi_slli_6               
+0000dbb2  __mspabi_slli_7               
+0000dbb0  __mspabi_slli_8               
+0000dbae  __mspabi_slli_9               
+0000d8ec  __mspabi_srli                 
+0000d932  __mspabi_srli_1               
+0000d90e  __mspabi_srli_10              
+0000d90a  __mspabi_srli_11              
+0000d906  __mspabi_srli_12              
+0000d902  __mspabi_srli_13              
+0000d8fe  __mspabi_srli_14              
+0000d8fa  __mspabi_srli_15              
+0000d92e  __mspabi_srli_2               
+0000d92a  __mspabi_srli_3               
+0000d926  __mspabi_srli_4               
+0000d922  __mspabi_srli_5               
+0000d91e  __mspabi_srli_6               
+0000d91a  __mspabi_srli_7               
+0000d916  __mspabi_srli_8               
+0000d912  __mspabi_srli_9               
+0000dc4c  _c_int00_noargs               
 0000fffe  _reset_vector                 
 000003b0  _stack                        
-0000dd3a  _system_post_cinit            
-0000dd36  _system_pre_init              
-0000dd30  abort                         
-0000d284  alignToWall                   
+0000dd50  _system_post_cinit            
+0000dd4c  _system_pre_init              
+0000dd46  abort                         
+0000d29c  alignToWall                   
 00000221  anglesChecked                 
 000002a4  anomalyEnd                    
 00000222  anomalyNumber                 
@@ -460,57 +460,57 @@ ffffffff  __c_args__
 00000200  avgReading                    
 00000232  buttonPressed                 
 00000223  canAnomaly                    
-0000cbe0  canLock                       
+0000cbdc  canLock                       
 00000213  canPosition                   
-0000c622  changingState                 
-0000ce36  checkFlags                    
-0000d06e  checkSchedule                 
-0000d4dc  circumnavigate                
+0000c624  changingState                 
+0000ce4e  checkFlags                    
+0000d086  checkSchedule                 
+0000d4f2  circumnavigate                
 00000328  currentTime                   
 0000022a  expectedCanDistance           
 0000020d  fillBufferCount               
-0000dab0  findDistanceAverage           
+0000dac6  findDistanceAverage           
 0000021a  firstCanFound                 
 00000310  flag                          
 0000022f  furtherWall                   
 00000216  furthestCanLeft               
 00000218  furthestCanRight              
 00000206  i                             
-0000dc52  indicatorLEDOff               
-0000dc6e  indicatorLEDOn                
-0000dae4  indicatorLEDSetup             
+0000dc68  indicatorLEDOff               
+0000dc84  indicatorLEDOn                
+0000dafa  indicatorLEDSetup             
 00000208  j                             
 00000224  lostCan                       
 00000226  lostCount                     
-0000d3d8  main                          
-0000dce0  memcpy                        
+0000d3ee  main                          
+0000dcf6  memcpy                        
 00000284  motorDrive                    
-0000d88a  motorOutput                   
-0000dd12  motorSetup                    
+0000d8a0  motorOutput                   
+0000dd28  motorSetup                    
 00000294  motorSteer                    
 0000022e  movement                      
 00000336  newAngle                      
 0000020c  nextState                     
 0000020a  previousState                 
-0000da36  readSwitch                    
+0000da4c  readSwitch                    
 00000220  readingsOnAngle               
 00000214  search                        
 00000210  searchSpeeds                  
-0000dd28  servoCenter                   
+0000dd3e  servoCenter                   
 0000031a  servoSONAR                    
-0000dbd8  servoSetup                    
-0000db18  servoTurn                     
-0000d832  setupButton                   
-0000db4c  setupSwitch                   
-0000dbac  setupTimerSONAR               
-0000dbfa  setupTimerSchedule            
+0000dbee  servoSetup                    
+0000db2e  servoTurn                     
+0000d848  setupButton                   
+0000db62  setupSwitch                   
+0000dbc2  setupTimerSONAR               
+0000dc10  setupTimerSchedule            
 0000032f  sideSelect                    
 00000332  startButton                   
 0000020e  startSide                     
 0000020b  state                         
 0000c000  stateControl                  
 00000230  straightTime                  
-0000d96e  timeIncrement                 
+0000d984  timeIncrement                 
 0000021e  timeToCanAlignMs              
 0000021c  timeToCanAlignSec             
 00000212  turnState                     
@@ -520,9 +520,9 @@ ffffffff  __c_args__
 000002e8  ultraRight                    
 000002f2  ultraSONAR                    
 00000235  ultraSONARRead                
-0000d666  ultrasonicSetup               
-0000d764  ultrasonicTrigger             
-0000d922  updateCarHeading              
+0000d67c  ultrasonicSetup               
+0000d77a  ultrasonicTrigger             
+0000d938  updateCarHeading              
 000002fc  wallDistancesLeft             
 00000306  wallDistancesRight            
 
@@ -690,96 +690,96 @@ address   name
 000010fe  CALDCO_1MHZ                   
 000010ff  CALBC1_1MHZ                   
 0000c000  stateControl                  
-0000c622  changingState                 
-0000c952  SONAR                         
-0000cbe0  canLock                       
-0000ce36  checkFlags                    
-0000d06e  checkSchedule                 
-0000d284  alignToWall                   
-0000d3d8  main                          
-0000d4dc  circumnavigate                
-0000d5ae  Timer1_A1_ISR                 
-0000d666  ultrasonicSetup               
-0000d6e8  __TI_decompress_lzss          
-0000d764  ultrasonicTrigger             
-0000d7d4  Timer0_A1_ISR                 
-0000d832  setupButton                   
-0000d88a  motorOutput                   
-0000d8d6  __mspabi_srli                 
-0000d8e4  __mspabi_srli_15              
-0000d8e8  __mspabi_srli_14              
-0000d8ec  __mspabi_srli_13              
-0000d8f0  __mspabi_srli_12              
-0000d8f4  __mspabi_srli_11              
-0000d8f8  __mspabi_srli_10              
-0000d8fc  __mspabi_srli_9               
-0000d900  __mspabi_srli_8               
-0000d904  __mspabi_srli_7               
-0000d908  __mspabi_srli_6               
-0000d90c  __mspabi_srli_5               
-0000d910  __mspabi_srli_4               
-0000d914  __mspabi_srli_3               
-0000d918  __mspabi_srli_2               
-0000d91c  __mspabi_srli_1               
-0000d922  updateCarHeading              
-0000d96e  timeIncrement                 
-0000d9b6  __TI_auto_init_nobinit_nopinit
-0000d9f8  Timer0_A0_ISR                 
-0000da36  readSwitch                    
-0000da74  IRRead                        
-0000dab0  findDistanceAverage           
-0000dae4  indicatorLEDSetup             
-0000db18  servoTurn                     
-0000db4c  setupSwitch                   
-0000db80  __mspabi_slli                 
-0000db8c  __mspabi_slli_15              
-0000db8e  __mspabi_slli_14              
-0000db90  __mspabi_slli_13              
-0000db92  __mspabi_slli_12              
-0000db94  __mspabi_slli_11              
-0000db96  __mspabi_slli_10              
-0000db98  __mspabi_slli_9               
-0000db9a  __mspabi_slli_8               
-0000db9c  __mspabi_slli_7               
-0000db9e  __mspabi_slli_6               
-0000dba0  __mspabi_slli_5               
-0000dba2  __mspabi_slli_4               
-0000dba4  __mspabi_slli_3               
-0000dba6  __mspabi_slli_2               
-0000dba8  __mspabi_slli_1               
-0000dbac  setupTimerSONAR               
-0000dbd8  servoSetup                    
-0000dbfa  setupTimerSchedule            
-0000dc1a  IRSetup                       
-0000dc36  _c_int00_noargs               
-0000dc52  indicatorLEDOff               
-0000dc6e  indicatorLEDOn                
-0000dc8a  Timer1_A0_ISR                 
-0000dca4  __mspabi_divu                 
-0000dca4  __mspabi_remu                 
-0000dcba  __TI_zero_init_nomemset       
-0000dcce  __TI_decompress_none          
-0000dce0  memcpy                        
-0000dcf2  Port1_ISR                     
-0000dd02  __mspabi_func_epilog_7        
-0000dd04  __mspabi_func_epilog_6        
-0000dd06  __mspabi_func_epilog_5        
-0000dd08  __mspabi_func_epilog_4        
-0000dd0a  __mspabi_func_epilog_3        
-0000dd0c  __mspabi_func_epilog_2        
-0000dd0e  __mspabi_func_epilog_1        
-0000dd12  motorSetup                    
-0000dd20  __TI_ISR_TRAP                 
-0000dd28  servoCenter                   
-0000dd30  C$$EXIT                       
-0000dd30  abort                         
-0000dd36  _system_pre_init              
-0000dd3a  _system_post_cinit            
-0000dd94  __TI_Handler_Table_Base       
-0000dd9a  __TI_Handler_Table_Limit      
-0000dd9e  __TI_CINIT_Base               
-0000dda6  __TI_CINIT_Limit              
-0000dda6  __TI_CINIT_Warm               
+0000c624  changingState                 
+0000c954  SONAR                         
+0000cbdc  canLock                       
+0000ce4e  checkFlags                    
+0000d086  checkSchedule                 
+0000d29c  alignToWall                   
+0000d3ee  main                          
+0000d4f2  circumnavigate                
+0000d5c4  Timer1_A1_ISR                 
+0000d67c  ultrasonicSetup               
+0000d6fe  __TI_decompress_lzss          
+0000d77a  ultrasonicTrigger             
+0000d7ea  Timer0_A1_ISR                 
+0000d848  setupButton                   
+0000d8a0  motorOutput                   
+0000d8ec  __mspabi_srli                 
+0000d8fa  __mspabi_srli_15              
+0000d8fe  __mspabi_srli_14              
+0000d902  __mspabi_srli_13              
+0000d906  __mspabi_srli_12              
+0000d90a  __mspabi_srli_11              
+0000d90e  __mspabi_srli_10              
+0000d912  __mspabi_srli_9               
+0000d916  __mspabi_srli_8               
+0000d91a  __mspabi_srli_7               
+0000d91e  __mspabi_srli_6               
+0000d922  __mspabi_srli_5               
+0000d926  __mspabi_srli_4               
+0000d92a  __mspabi_srli_3               
+0000d92e  __mspabi_srli_2               
+0000d932  __mspabi_srli_1               
+0000d938  updateCarHeading              
+0000d984  timeIncrement                 
+0000d9cc  __TI_auto_init_nobinit_nopinit
+0000da0e  Timer0_A0_ISR                 
+0000da4c  readSwitch                    
+0000da8a  IRRead                        
+0000dac6  findDistanceAverage           
+0000dafa  indicatorLEDSetup             
+0000db2e  servoTurn                     
+0000db62  setupSwitch                   
+0000db96  __mspabi_slli                 
+0000dba2  __mspabi_slli_15              
+0000dba4  __mspabi_slli_14              
+0000dba6  __mspabi_slli_13              
+0000dba8  __mspabi_slli_12              
+0000dbaa  __mspabi_slli_11              
+0000dbac  __mspabi_slli_10              
+0000dbae  __mspabi_slli_9               
+0000dbb0  __mspabi_slli_8               
+0000dbb2  __mspabi_slli_7               
+0000dbb4  __mspabi_slli_6               
+0000dbb6  __mspabi_slli_5               
+0000dbb8  __mspabi_slli_4               
+0000dbba  __mspabi_slli_3               
+0000dbbc  __mspabi_slli_2               
+0000dbbe  __mspabi_slli_1               
+0000dbc2  setupTimerSONAR               
+0000dbee  servoSetup                    
+0000dc10  setupTimerSchedule            
+0000dc30  IRSetup                       
+0000dc4c  _c_int00_noargs               
+0000dc68  indicatorLEDOff               
+0000dc84  indicatorLEDOn                
+0000dca0  Timer1_A0_ISR                 
+0000dcba  __mspabi_divu                 
+0000dcba  __mspabi_remu                 
+0000dcd0  __TI_zero_init_nomemset       
+0000dce4  __TI_decompress_none          
+0000dcf6  memcpy                        
+0000dd08  Port1_ISR                     
+0000dd18  __mspabi_func_epilog_7        
+0000dd1a  __mspabi_func_epilog_6        
+0000dd1c  __mspabi_func_epilog_5        
+0000dd1e  __mspabi_func_epilog_4        
+0000dd20  __mspabi_func_epilog_3        
+0000dd22  __mspabi_func_epilog_2        
+0000dd24  __mspabi_func_epilog_1        
+0000dd28  motorSetup                    
+0000dd36  __TI_ISR_TRAP                 
+0000dd3e  servoCenter                   
+0000dd46  C$$EXIT                       
+0000dd46  abort                         
+0000dd4c  _system_pre_init              
+0000dd50  _system_post_cinit            
+0000ddaa  __TI_Handler_Table_Base       
+0000ddb0  __TI_Handler_Table_Limit      
+0000ddb4  __TI_CINIT_Base               
+0000ddbc  __TI_CINIT_Limit              
+0000ddbc  __TI_CINIT_Warm               
 0000ffe0  __TI_int00                    
 0000ffe4  __TI_int02                    
 0000ffe6  __TI_int03                    
