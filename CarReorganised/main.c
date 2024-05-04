@@ -27,7 +27,8 @@ Change History
             reading instead of absolute distance to wall
 22-APR-2024 SARK implemented left and right ultrasonic sensors as well as allowing
             "wall to align to" to be controllable by switch
-01-MAY-2024 Trying one last realignment fix & commenting all of code
+01-MAY-2024 SARK trying one last realignment fix & commenting all of code
+03-MAY-2023 SARK optimised code for demo on demo day. Car won the competition!
 --------------------------------------------------------------------------------
 */
 
@@ -182,52 +183,42 @@ void    findDistanceAverage(unsigned char start, unsigned char end, unsigned int
 // CHANGEABLE SETTINGS MACROs
 //------------------------------------------------------------------------------
 //Scheduler control
-#define TIMER_INC_MS    2           //Scheduler interrupts period (2 ms)
+#define TIMER_INC_MS    2                   //Scheduler interrupts period (2 ms)
 
 //Drive Speeds
-#define MOTOR_PWM_PERIOD    100                      //PWM period of motors.
-#define SPEED_FORWARD       50    //Driving forward speed
-#define SPEED_BACK          50    //Driving backward is slower so should have higher PWM to compensate
+#define MOTOR_PWM_PERIOD    100             //PWM period of motors.
 
 //Wall readings control
 #define WALL_READINGS   5                   //Number of wall readings remembered (MAKE 1+2^x)
-#define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1), used to computationally effiecient find average
-#define TIME_BEFORE_SEARCHING   8           //
-#define FIND_SPEED    45
-#define SPRINT_SPEED  60
-
-//Time to align to can
-//#define ALIGNMENT_TIME   850
+#define AVERAGE_SHIFT   2					//log2(WALL_READINGS-1), used for computationally efficient find average
+#define TIME_BEFORE_SEARCHING   6           //Time in seconds on start before searching
+#define FIND_SPEED    35                    //Speed once in search time
+#define SPRINT_SPEED  60                    //Sprint speed to get to search area
 
 //SONAR Reading control
 #define SONAR_READINGS   5					//Make equal to wall readings
-#define MAX_FRONT_DETECT 2500               //Distance in front can is detected while searching
-#define ANOMALY_DISTANCE 500                //Distance drop off for start of anomaly
+#define MAX_FRONT_DETECT 2500               //Distance front can is detected in
+#define ANOMALY_DISTANCE 500                //Distance drop off for start of anomaly in SONAR()
 
 //SONAR SCANNING
 #define NUMBER_OF_ANGLES_CHECKED    15      //Number of angles in SONAR sweep
 
 //CAN ALIGN
-#define CAN_ALIGN_SPEED 45                  //Speed to readjust
-#define INITIAL_CAN_ALIGN_SEC   0           //Time to readjust from parallel
+#define INITIAL_CAN_ALIGN_SEC   0           //Time to re-adjust from initial detection and parallel
 #define INITIAL_CAN_ALIGN_MS    900
-#define SECONDARY_CAN_ALIGN_SEC 0           //Time to readjust after approach
-#define SECONDARY_CAN_ALIGN_MS  400
+#define SECONDARY_CAN_ALIGN_SEC 1           //Time to re-adjust after approached can but at a bad angle
+#define SECONDARY_CAN_ALIGN_MS  100
 
 //CAN APPROACH
-#define FACE_CAN_ANGLE_TOLERANCE    250     //Directly facing tolerance
-#define FACE_CAN_DIST_TOLERANCE     500     //Distance away tolerance
-#define CAN_APPROACH_SPEED          45      //Speed when approaching
+#define FACE_CAN_ANGLE_TOLERANCE    100     //Directly facing tolerance (In servo PWM period ~15 degrees)
+#define FACE_CAN_DIST_TOLERANCE     600     //Distance away tolerance (Ultrasonic pulse length ~6 cm)
+#define CAN_APPROACH_SPEED          40      //Speed when approaching
 
 //REVERSE TIME FOR RUN UP TO CAN
 #define REVERSE_TIME   750                  //750 ms reverse
-#define REVERSE_SPEED  45
 
 //HIT CAN
-#define HIT_TIME   900
-
-//CIRCUMNAVIGATE
-#define CIRCUMNAVIGATE_SPEED    45
+#define HIT_TIME   900                      //Time to drive into can for
 
 //==============================================================================
 // Global Variable Initialisation
@@ -990,7 +981,7 @@ void stateControl()
             else    //When buffer full take average as further can will be seen
             {
                 findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
-                 furthestCanLeft = avgReading-100;
+                furthestCanLeft = avgReading;
             }
 
             //Trigger right ultrasonic
@@ -1010,7 +1001,7 @@ void stateControl()
             else    //When buffer full take average as further can will be seen
             {
                 findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
-                 furthestCanRight = avgReading-100;
+                 furthestCanRight = avgReading;
             }
             ultraReadRight = 0;
         }
@@ -1056,12 +1047,13 @@ void stateControl()
 					indicatorLEDOff(&LEDBlue);
                     indicatorLEDOff(&LEDRed);
 				}
+                updateCarHeading(3, 3, searchSpeeds);
 
                 //Find average of readings
                 findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
 
 				//If reading is under can detection threshold
-                if (avgReading < furthestCanLeft-100)
+                if (avgReading < furthestCanLeft)
                 {
 					//If searching then change state to navigate to can
                     if(search)
@@ -1104,7 +1096,7 @@ void stateControl()
 		{
                 findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
 
-                if (avgReading < furthestCanRight-100)
+                if (avgReading < furthestCanRight)
                 {
                     if(search)
                     {
@@ -1183,7 +1175,7 @@ void stateControl()
 			Schedule.stateChange.sec = 0;
 			Schedule.stateChange.ms = -1;
 
-			timeIncrement(&Schedule.searchStart, 2, 0);
+			timeIncrement(&Schedule.searchStart, 0, 500);
 		}
 		
 		//On ultrasonic left read
@@ -1204,7 +1196,7 @@ void stateControl()
                 findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
 
                 //If in can threshold realign to get into SONAR range
-                if (avgReading < furthestCanLeft-100)
+                if (avgReading < furthestCanLeft)
                 {
                     Schedule.movementChange.ms = -1;
 
@@ -1238,7 +1230,7 @@ void stateControl()
 			{
 				findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
 
-				if (avgReading < furthestCanRight-100)
+				if (avgReading < furthestCanRight)
 				{
 					Schedule.movementChange.ms = -1;
 					
@@ -1292,7 +1284,7 @@ void stateControl()
 					Schedule.stateChange.ms = -1;
 
 					//Start searching immediately
-					timeIncrement(&Schedule.searchStart, 0, 300);
+					timeIncrement(&Schedule.searchStart, 0, 500);
 				}
 			}
         }
@@ -1416,7 +1408,7 @@ void stateControl()
                 flag.stateChange = 1;
                 Schedule.stateChange.ms = -1;
 
-                timeIncrement(&Schedule.searchStart, 5, 0);
+                timeIncrement(&Schedule.searchStart, 3, 0);
 
                 for (i=0; i<WALL_READINGS; i++)
                 {
@@ -1424,179 +1416,7 @@ void stateControl()
                     wallDistancesRight[i] = 64000;
                 }
             }
-
-            //movement = 4;
         }
-
-        /*
-		else if (movement == 3)
-		{
-			//Let ultrasonics work
-		}
-        else if (movement == 4) //Do same align to wall functionality as in Search but until it appears driving straight
-        {
-            fillBufferCount = 0;
-            straightTime = 0;
-            movement = 3;
-	        updateCarHeading(FORWARD, STRAIGHT, 55);
-	        turnState = STRAIGHT;
-
-	        if (startSide == LEFT)
-			{
-				timeIncrement(&Schedule.ultraLeftStart, 0, 200);
-			}
-			else
-			{
-				timeIncrement(&Schedule.ultraRightStart, 0, 200);
-			}
-        }
-        else
-        {
-            movement = 4;
-        }
-
-        //After dealing with a can and car has guessed wall alignment get straight again
-        if (ultraReadLeft)
-        {
-            if (fillBufferCount < WALL_READINGS)
-            {
-                fillBufferCount++;
-                timeIncrement(&(Schedule.ultraLeftStart), 0, 40);
-            }
-            else
-            {
-                if (straightTime > 20)  //Occurs when not aligning to this side and just getting new reading
-                {
-                    findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
-                    if (avgReading > 11000)
-                    {
-                        furthestCanLeft = 10000;
-                    }
-                    else
-                    {
-                        furthestCanLeft = avgReading-1000;
-                    }
-
-                    nextState = SEARCH;
-                    flag.stateChange = 1;
-                    if (IR.colour == 1) //Can was black
-                    {
-                        //Search start again once given some time to realign to wall properly
-                        timeIncrement(&Schedule.searchStart, 5, 0);
-                    }
-                    else
-                    {
-                        //Search start again once past white can so set large where change in search due to seeing white can again
-                        timeIncrement(&Schedule.searchStart, 10, 0);
-                    }
-                }
-                else
-                {
-                    alignToWall();
-                    if (turnState == STRAIGHT)
-                    {
-                        straightTime++;
-                        if (straightTime > 20)  //Find wall on right next before searching
-                        {
-                            indicatorLEDOn(&LEDRed);
-                            fillBufferCount = 0;
-                            findDistanceAverage(1, WALL_READINGS, wallDistancesLeft);
-                            if (avgReading > 12000)
-                            {
-                                furthestCanLeft = 12000;
-                            }
-                            else
-                            {
-                                furthestCanLeft = avgReading-2000;
-                            }
-                            timeIncrement(&(Schedule.ultraRightStart), 0, 20);
-                        }
-                        else
-                        {
-                            timeIncrement(&(Schedule.ultraLeftStart), 0, 40);
-                        }
-                    }
-                    else
-                    {
-                        straightTime = 0;
-                        //timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
-                    }
-                }
-            }
-            ultraReadLeft = 0;
-        }
-
-        //After dealing with a can and car has guessed wall alignment get straight again
-        if (ultraReadRight)
-        {
-            if (fillBufferCount < WALL_READINGS)
-            {
-                fillBufferCount++;
-                timeIncrement(&(Schedule.ultraRightStart), 0, 40);
-            }
-            else
-            {
-                if (straightTime > 20)  //Occurs when not aligning to this side and just getting new reading
-                {
-                    findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
-                    if (avgReading > 12000)
-                    {
-                        furthestCanRight = 10000;
-                    }
-                    else
-                    {
-                        furthestCanRight = avgReading-2000;
-                    }
-
-                    nextState = SEARCH;
-                    indicatorLEDOn(&LEDBlue);
-                    flag.stateChange = 1;
-                    if (IR.colour == 1) //Can was black
-                    {
-                        //Search start again once given some time to realign to wall properly
-                        timeIncrement(&Schedule.searchStart, 5, 0);
-                    }
-                    else
-                    {
-                        //Search start again once past white can so set large where change in search due to seeing white can again
-                        timeIncrement(&Schedule.searchStart, 10, 0);
-                    }
-                }
-                else
-                {
-                    alignToWall();
-                    if (turnState == STRAIGHT)
-                    {
-                        straightTime++;
-                        if (straightTime > 20)  //Find wall on right next before searching
-                        {
-                            fillBufferCount = 0;
-                            findDistanceAverage(1, WALL_READINGS, wallDistancesRight);
-                            if (avgReading > 12000)
-                            {
-                                furthestCanRight = 10000;
-                            }
-                            else
-                            {
-                                furthestCanRight = avgReading-2000;
-                            }
-                            timeIncrement(&(Schedule.ultraLeftStart), 0, 20);
-                        }
-                        else
-                        {
-                            timeIncrement(&(Schedule.ultraRightStart), 0, 40);
-                        }
-                    }
-                    else
-                    {
-                        straightTime = 0;
-                        //timeIncrement(&(Schedule.ultraRightStart), 0, 20);
-                    }
-                }
-            }
-            ultraReadRight = 0;
-        }*/
-
     }
 
 //DO NOTHING==============================================================================
@@ -1790,7 +1610,7 @@ void    changingState()
     {
         movement = 0;
 
-        updateCarHeading(BACK, STRAIGHT, SPEED_BACK);
+        updateCarHeading(BACK, STRAIGHT, 50);
 
         nextState = CAN_HIT;
         timeIncrement(&Schedule.stateChange, 0, REVERSE_TIME);
@@ -1870,7 +1690,7 @@ void alignToWall()
         }
     }
 
-    if ((largeChange > 0) && (largeChange <= 2))   //Probably just wall change so ignore for this reading
+    if ((largeChange > 0) && (largeChange <= 1))   //Probably just wall change so ignore for this reading
     {
         turnState = STRAIGHT;
     }
@@ -1898,11 +1718,11 @@ void alignToWall()
         //AWAY is relative to which wall so turn correct way
 		if (startSide == LEFT)
 		{
-			updateCarHeading(FORWARD, RIGHT, searchSpeeds-5);
+			updateCarHeading(FORWARD, RIGHT, searchSpeeds);
 		}
 		else
 		{
-			updateCarHeading(FORWARD, LEFT, searchSpeeds-5);
+			updateCarHeading(FORWARD, LEFT, searchSpeeds);
 		}
 
         timeIncrement(&Schedule.movementChange, 0, 50);
@@ -1911,11 +1731,11 @@ void alignToWall()
         //CLOSE is relative to which wall so turn correct way
         if (startSide == LEFT)
 		{
-			updateCarHeading(FORWARD, LEFT, searchSpeeds-5);
+			updateCarHeading(FORWARD, LEFT, searchSpeeds);
 		}
 		else
 		{
-			updateCarHeading(FORWARD, RIGHT, searchSpeeds-5);
+			updateCarHeading(FORWARD, RIGHT, searchSpeeds);
 		}
 
         timeIncrement(&Schedule.movementChange, 0, 50);
@@ -1934,6 +1754,7 @@ void    canLock()
         //If facing can and close enough
         if ((TA1CCR2 > 1500-FACE_CAN_ANGLE_TOLERANCE) && (TA1CCR2 < 1500+FACE_CAN_ANGLE_TOLERANCE))
         {
+            //Dont do a recheck of scan
             //Stop driving
 			updateCarHeading(OFF, STRAIGHT, CAN_APPROACH_SPEED);
 
@@ -1985,7 +1806,7 @@ void    canLock()
     //When can far away drive faster
     if (expectedCanDistance > 8000)
     {
-        updateCarHeading(3, 3, CAN_APPROACH_SPEED + 15);
+        updateCarHeading(3, 3, CAN_APPROACH_SPEED + 10);
     }
     else
     {
@@ -2011,7 +1832,10 @@ void    canLock()
                 updateCarHeading(FORWARD, STRAIGHT, CAN_APPROACH_SPEED);
             }
 
-            expectedCanDistance = SONARDistances[0] + 200;
+            //findDistanceAverage(0, SONAR_READINGS-1, SONARDistances);
+
+            //expectedCanDistance = avgReading;
+            expectedCanDistance = SONARDistances[0] + 1000;
             lostCan = 0;
             lostCount = 0;
 
@@ -2027,7 +1851,11 @@ void    canLock()
                 //Probably just moved off can so change SONAR direction
                 servoSONAR.direction ^= 1;
             }
-            else if (lostCount > 4)
+            else if (lostCount == 3)
+            {
+                servoSONAR.direction ^= 1;
+            }
+            else if (lostCount > 8)
             {
                 //If lost for too long return to scan
                 nextState = SONAR_SCAN;
@@ -2061,9 +1889,6 @@ void    canLock()
             }
             else
             {
-                /*
-                nextState = SONAR_SCAN;
-                flag.stateChange = 1;*/
             }
 
             indicatorLEDOff(&LEDRed);
@@ -2076,7 +1901,9 @@ void    canLock()
             lostCan = 0;
             lostCount = 0;
 
-            expectedCanDistance = SONARDistances[0]+200; //Update latest distance to can
+            //findDistanceAverage(1, SONAR_READINGS, SONARDistances);
+
+            expectedCanDistance = SONARDistances[0]+800; //Update latest distance to can
 
             indicatorLEDOn(&LEDRed);
             timeIncrement(&Schedule.ultraSONARStart, 0, 20);
@@ -2215,7 +2042,7 @@ void SONAR()
 
                 //Set angle to point at
                 newAngle = PWM_SERVO_UPPER;
-                for (j=NUMBER_OF_ANGLES_CHECKED;j>canAnomaly;j--)
+                for (j=NUMBER_OF_ANGLES_CHECKED;j>canAnomaly+1;j--)
                 {
                     newAngle -= servoSONAR.speed;
                 }
@@ -2307,7 +2134,7 @@ void circumnavigate()
 		nextState = SEARCH;
 		flag.stateChange = 1;
 		Schedule.stateChange.ms = -1;
-		timeIncrement(&Schedule.searchStart, 3, 0);
+		timeIncrement(&Schedule.searchStart, 0, 500);
 	}
 }
 
