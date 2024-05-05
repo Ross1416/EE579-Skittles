@@ -6,11 +6,40 @@
 </p>
 
 
-https://github.com/Ross1416/EE579-Skittles/assets/77679842/f2c0dbcf-0c25-4793-aab6-1710b02c763d
+Final Demo Day Results
+
+Heat 1
+
+https://github.com/Ross1416/EE579-Skittles/assets/77679842/c86a0a25-7852-4bd4-9d39-e0872e5b2d3d
 
 
 
-https://github.com/Ross1416/EE579-Skittles/assets/77679842/a174d284-e2f5-43d2-8c9c-086aa4af7b1f
+Heat 2
+
+
+https://github.com/Ross1416/EE579-Skittles/assets/77679842/7563ef13-5aec-49bf-9490-8388c58f7000
+
+
+Semi-final
+
+
+https://github.com/Ross1416/EE579-Skittles/assets/77679842/7b09cfc3-21dd-4e16-b04d-08700aa69c5c
+
+
+
+Anti-climactic Final
+
+
+https://github.com/Ross1416/EE579-Skittles/assets/77679842/db8d8a39-f27a-464d-a305-0642033d31cf
+
+2nd Final (for fun)
+
+
+https://github.com/Ross1416/EE579-Skittles/assets/77679842/e8e8383b-b6d6-447a-95fe-932a4549ee91
+
+
+
+
 
 
 
