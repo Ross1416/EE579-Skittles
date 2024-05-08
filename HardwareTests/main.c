@@ -84,7 +84,7 @@ int main(void)
         // Enter 9 for RIGHT ultrasonic test
         // Enter 10 for Infrared test
 
-        selectComponent(10);
+        selectComponent(1);
     }
 }
 
