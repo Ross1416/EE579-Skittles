@@ -4,6 +4,8 @@
 
 This repository is for RUSH (Robust Ultrasonic Skittle Hunter). RUSH (shown below) aims to autonomously play a game of skittles in a corridor without user input beyond the start. RUSH is based on a small, simple remote controlled (RC) car that was extensively modified to play the game with the aim of knocking over one or two black skittles while leaving any white skittles untouched. The winner of the game is determined by the quickest car to knock a black skittle over. However, if a white skittle is knocked over at any point in the round by the car, it is disqualified from the round. 
 
+See TDF for more details.
+
 <p align="center">
   <img src="/assets/front.jpg" width=50% height=50%>
   <img src="/assets/back.jpg" width=50% height=50%>
